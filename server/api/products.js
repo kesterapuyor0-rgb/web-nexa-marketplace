@@ -1,6 +1,6 @@
 import { getBuyerForRequest, getDatabase } from "./_mongoAuth.js";
-import { store } from "../server/store.js";
-import { filterProductsByBuyerLocation } from "../server/utils/productLocation.js";
+import { store } from "../../server/store.js";
+import { filterProductsByBuyerLocation } from "../../server/utils/productLocation.js";
 
 function normalizeProduct(product, vendor) {
   const { _id, vendor: embeddedVendor, vendor_location, location, ...fields } = product;

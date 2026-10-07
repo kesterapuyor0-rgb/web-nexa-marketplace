@@ -1,6 +1,6 @@
 import { getBuyerForRequest, getDatabase } from "../_mongoAuth.js";
 import { flutterwaveRequest, toNaira } from "../_flutterwave.js";
-import { store } from "../../server/store.js";
+import { store } from "../../../server/store.js";
 import { randomUUID } from "node:crypto";
 
 function appUrl(req) {

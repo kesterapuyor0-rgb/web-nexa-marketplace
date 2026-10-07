@@ -1,5 +1,1 @@
-import { createApp } from "../server/app.js";
-
-export const app = createApp();
-
-export default app;
+export { default, app } from "../server/api/index.js";

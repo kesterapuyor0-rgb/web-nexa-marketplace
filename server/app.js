@@ -8,16 +8,16 @@ import { vendorRegister, vendorLogin, getVendorProfile, updateVendorBranding } f
 import { adminLogin, getAdminProfile } from "../server/controllers/adminAuth.js";
 import { getProducts, getProductById, getVendorProducts, createProduct, updateProduct, deleteProduct } from "../server/controllers/productController.js";
 import { adminReleaseEscrow } from "../server/controllers/escrowController.js";
-import initializeFlutterwaveCheckout from "../api/checkout/initialize.js";
-import verifyFlutterwavePayment from "../api/checkout/verify.js";
-import flutterwaveWebhook from "../api/payments/flutterwave/webhook.js";
-import getBuyerOrdersFromMongo from "../api/orders/buyer.js";
-import getVendorOrdersFromMongo from "../api/orders/vendor.js";
-import shipMongoOrder from "../api/orders/[id]/ship.js";
-import confirmMongoDelivery from "../api/orders/[id]/confirm-delivery.js";
-import getVendorWalletFromMongo from "../api/vendor/wallet.js";
-import resolveVendorBank from "../api/vendor/banks/resolve.js";
-import withdrawVendorWallet from "../api/vendor/wallet/withdraw.js";
+import initializeFlutterwaveCheckout from "./api/checkout/initialize.js";
+import verifyFlutterwavePayment from "./api/checkout/verify.js";
+import flutterwaveWebhook from "./api/payments/flutterwave/webhook.js";
+import getBuyerOrdersFromMongo from "./api/orders/buyer.js";
+import getVendorOrdersFromMongo from "./api/orders/vendor.js";
+import shipMongoOrder from "./api/orders/[id]/ship.js";
+import confirmMongoDelivery from "./api/orders/[id]/confirm-delivery.js";
+import getVendorWalletFromMongo from "./api/vendor/wallet.js";
+import resolveVendorBank from "./api/vendor/banks/resolve.js";
+import withdrawVendorWallet from "./api/vendor/wallet/withdraw.js";
 import {
   getAdminDashboardStats,
   getAllVendors,
