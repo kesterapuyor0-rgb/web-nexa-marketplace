@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { useAuth } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { Navbar } from "./components/Navbar.jsx";
-import { Footer } from "./components/Footer.jsx";
 import { CartDrawer } from "./components/CartDrawer.jsx";
 import { CheckoutModal } from "./components/CheckoutModal.jsx";
 import { MarketplaceHome } from "./pages/MarketplaceHome.jsx";
@@ -19,6 +19,13 @@ import { SocialFeed } from "./pages/SocialFeed.jsx";
 import { Messages } from "./pages/Messages.jsx";
 import FoodDelivery from "./pages/FoodDelivery.jsx";
 import { PaymentVerification } from "./pages/PaymentVerification.jsx";
+function RootRedirect() {
+  const { token, role, isLoading } = useAuth();
+  if (isLoading) {
+    return <div className="min-h-[50vh]" aria-busy="true" />;
+  }
+  return <Navigate to={token && role ? "/marketplace" : "/login"} replace />;
+}
 export default function App() {
   return <AuthProvider>
       <CartProvider>
@@ -47,7 +54,7 @@ export default function App() {
                 {
     /* Public Marketplace Catalog */
   }
-                <Route path="/" element={<MarketplaceHome />} />
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="/marketplace" element={<MarketplaceHome />} />
 
                 {
@@ -97,10 +104,6 @@ export default function App() {
               </Routes>
             </main>
 
-            {
-    /* Global WebNexa Footer */
-  }
-            <Footer />
           </div>
         </Router>
       </CartProvider>
