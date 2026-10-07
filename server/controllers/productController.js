@@ -1,5 +1,6 @@
 import { store } from "../store.js";
 import { getVendorRating } from "./vendorReviews.js";
+import { filterProductsByBuyerLocation } from "../utils/productLocation.js";
 export async function getProducts(req, res) {
   try {
     const { category, search, vendorId } = req.query;
@@ -16,11 +17,22 @@ export async function getProducts(req, res) {
     if (vendorId) {
       filtered = filtered.filter((p) => p.vendor_id === String(vendorId));
     }
-    const productsWithRatings = filtered.map((product) => {
+    const locationFiltered = filterProductsByBuyerLocation(filtered, req.buyer, (product) =>
+      store.vendors.find((vendor) => vendor.id === product.vendor_id)
+    );
+    const productsWithRatings = locationFiltered.products.map((product) => {
       const rating = getVendorRating(product.vendor_id);
-      return rating.review_count > 0 ? { ...product, rating: rating.average_rating, reviews_count: rating.review_count } : product;
+      const vendor = store.vendors.find((candidate) => candidate.id === product.vendor_id);
+      const withLocation = vendor ? { ...product, vendor_location: { city: vendor.city || "", state: vendor.state || "", country: vendor.country || "" } } : product;
+      return rating.review_count > 0 ? { ...withLocation, rating: rating.average_rating, reviews_count: rating.review_count } : withLocation;
     });
-    res.json({ products: productsWithRatings });
+    res.json({
+      products: productsWithRatings,
+      location: {
+        ...locationFiltered.location,
+        buyer: req.buyer ? { city: req.buyer.city || "", state: req.buyer.state || "", country: req.buyer.country || "" } : null
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve products: " + err.message });
   }

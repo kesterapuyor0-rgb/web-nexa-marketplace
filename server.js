@@ -6,7 +6,7 @@ import { Server as SocketServer } from "socket.io";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
-import { requireBuyerAuth, requireVendorAuth, requireApprovedVendor, requireAdminAuth, requireSocialAuth } from "./server/middleware/auth.js";
+import { requireBuyerAuth, optionalBuyerAuth, requireVendorAuth, requireApprovedVendor, requireAdminAuth, requireSocialAuth } from "./server/middleware/auth.js";
 import { buyerRegister, buyerLogin, getBuyerProfile, updateBuyerProfile } from "./server/controllers/buyerAuth.js";
 import { vendorRegister, vendorLogin, getVendorProfile, updateVendorBranding } from "./server/controllers/vendorAuth.js";
 import { adminLogin, getAdminProfile } from "./server/controllers/adminAuth.js";
@@ -104,7 +104,7 @@ async function startServer() {
   app.post("/api/food/orders/:orderId/confirm-delivery", requireBuyerAuth, confirmFoodDelivery);
   app.post("/api/auth/admin/login", adminLogin);
   app.get("/api/auth/admin/me", requireAdminAuth, getAdminProfile);
-  app.get("/api/products", getProducts);
+  app.get("/api/products", optionalBuyerAuth, getProducts);
   app.get("/api/products/:id", getProductById);
   app.get("/api/vendor/products", requireVendorAuth, getVendorProducts);
   app.post("/api/vendor/products", requireVendorAuth, requireApprovedVendor, createProduct);

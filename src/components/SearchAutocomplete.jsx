@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import { Search } from "lucide-react";
 export const SearchAutocomplete = ({
   searchQuery,
@@ -8,13 +9,16 @@ export const SearchAutocomplete = ({
   placeholder = "Search computing, networking, solar equipment, verified gear..."
 }) => {
   const navigate = useNavigate();
+  const { token, role } = useAuth();
   const containerRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/products").then((response) => response.ok ? response.json() : Promise.reject(new Error("Catalog unavailable"))).then((data) => {
+    fetch("/api/products", {
+      headers: token && role === "buyer" ? { Authorization: `Bearer ${token}` } : {}
+    }).then((response) => response.ok ? response.json() : Promise.reject(new Error("Catalog unavailable"))).then((data) => {
       if (isMounted) setProducts(data.products || []);
     }).catch(() => {
       if (isMounted) setProducts([]);
@@ -22,7 +26,7 @@ export const SearchAutocomplete = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [token, role]);
   const suggestions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return [];

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { Logo } from "./Logo.jsx";
@@ -28,6 +28,8 @@ export const Navbar = () => {
   const { role, buyer, vendor, admin, token, logout } = useAuth();
   const { totalCount, setIsCartOpen } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMarketplace = location.pathname === "/" || location.pathname === "/marketplace";
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -422,7 +424,7 @@ export const Navbar = () => {
     placeholder="Search verified gear, brands..."
   />
       </div>
-      <nav aria-label="Browse categories" className="mobile-category-nav sm:hidden flex gap-2 overflow-x-auto px-4 pb-3">
+      <nav aria-label="Browse categories" className={`${isMarketplace ? "hidden" : "flex"} mobile-category-nav sm:hidden gap-2 overflow-x-auto px-4 pb-3`}>
         {categories.map((category) => {
     const Icon = category.icon;
     return <button

@@ -49,7 +49,7 @@ export const BuyerLogin = () => {
         throw new Error(data.error || "Authentication failed.");
       }
       loginBuyer(data.token, data.buyer);
-      navigate(redirect);
+      navigate("/marketplace", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -68,7 +68,7 @@ export const BuyerLogin = () => {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || data.error || "Google Authentication failed.");
       loginBuyer(data.token, data.buyer);
-      navigate(redirect);
+      navigate("/marketplace", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google Authentication failed.");
     } finally {
@@ -89,7 +89,7 @@ export const BuyerLogin = () => {
         throw new Error(data.message || data.error || "Google account setup failed.");
       }
       loginBuyer(data.token, data.buyer);
-      navigate(redirect);
+      navigate("/marketplace", { replace: true });
     } catch (err) {
       console.error("Google Register Error:", err);
       setError(err instanceof Error ? err.message : "Unable to register with Google. Try again.");

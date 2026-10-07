@@ -33,6 +33,20 @@ export async function initializeMysqlDatabase() {
     const schemaPath = path.join(process.cwd(), "server", "database", "schema.sql");
     const schema = await fs.readFile(schemaPath, "utf8");
     await pool.query(schema);
+    const vendorLocationColumns = [
+      ["city", "VARCHAR(100) NULL"],
+      ["state", "VARCHAR(100) NULL"],
+      ["country", "VARCHAR(100) NOT NULL DEFAULT 'Nigeria'"]
+    ];
+    for (const [column, definition] of vendorLocationColumns) {
+      const [existing] = await pool.execute(
+        "SELECT COUNT(*) AS count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vendors' AND COLUMN_NAME = ?",
+        [column]
+      );
+      if (Number(existing[0].count) === 0) {
+        await pool.query(`ALTER TABLE vendors ADD COLUMN ${column} ${definition}`);
+      }
+    }
     await pool.query("SELECT 1");
     mysqlAvailable = true;
     console.log("[database] MySQL schema initialized successfully.");
@@ -86,6 +100,9 @@ export async function saveVendorToMysql(vendor) {
         email,
         password_hash,
         phone,
+        city,
+        state,
+        country,
         company_registration_no,
         tax_id,
         bank_name,
@@ -103,11 +120,14 @@ export async function saveVendorToMysql(vendor) {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         business_name = VALUES(business_name),
         contact_person = VALUES(contact_person),
         phone = VALUES(phone),
+        city = VALUES(city),
+        state = VALUES(state),
+        country = VALUES(country),
         company_registration_no = VALUES(company_registration_no),
         tax_id = VALUES(tax_id),
         bank_name = VALUES(bank_name),
@@ -131,6 +151,9 @@ export async function saveVendorToMysql(vendor) {
       vendor.email,
       vendor.password_hash,
       vendor.phone,
+      vendor.city || null,
+      vendor.state || null,
+      vendor.country || "Nigeria",
       vendor.company_registration_no,
       vendor.tax_id || null,
       vendor.bank_name,
@@ -272,6 +295,9 @@ export async function findVendorByEmail(email) {
         email,
         password_hash,
         phone,
+        city,
+        state,
+        country,
         company_registration_no,
         tax_id,
         bank_name,
@@ -307,6 +333,9 @@ export async function findVendorByRegistrationNumber(registrationNumber) {
         email,
         password_hash,
         phone,
+        city,
+        state,
+        country,
         company_registration_no,
         tax_id,
         bank_name,

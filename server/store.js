@@ -69,7 +69,18 @@ class MarketplaceStore {
       if (!fs.existsSync(filePath)) return;
       const saved = JSON.parse(fs.readFileSync(filePath, "utf8"));
       if (Array.isArray(saved.buyers)) this.buyers = saved.buyers;
-      if (Array.isArray(saved.vendors)) this.vendors = saved.vendors;
+      if (Array.isArray(saved.vendors)) {
+        this.vendors = saved.vendors.map((vendor) => {
+          const seedVendor = this.vendors.find((seed) => seed.id === vendor.id);
+          return {
+            ...seedVendor,
+            ...vendor,
+            city: vendor.city || seedVendor?.city || "",
+            state: vendor.state || seedVendor?.state || "",
+            country: vendor.country || seedVendor?.country || "Nigeria"
+          };
+        });
+      }
       if (Array.isArray(saved.admins)) this.admins = saved.admins;
     } catch (error) {
       console.error("Unable to load persisted authentication records:", error);
@@ -145,6 +156,9 @@ class MarketplaceStore {
       email: "vendor@webnexa.dev",
       password_hash: DEFAULT_PASSWORD_HASH,
       phone: "+2348021112233",
+      city: "Lagos",
+      state: "Lagos State",
+      country: "Nigeria",
       company_registration_no: "RC-1849204",
       tax_id: "TIN-90823412",
       bank_name: "Zenith Bank PLC",
@@ -169,6 +183,9 @@ class MarketplaceStore {
       email: "tunde@kesterdynamics.ng",
       password_hash: DEFAULT_PASSWORD_HASH,
       phone: "+2348187765544",
+      city: "Abuja",
+      state: "FCT",
+      country: "Nigeria",
       company_registration_no: "RC-2049182",
       tax_id: "TIN-10923847",
       bank_name: "Guaranty Trust Bank (GTBank)",
@@ -193,6 +210,9 @@ class MarketplaceStore {
       email: "pending@vanguardsolar.ng",
       password_hash: DEFAULT_PASSWORD_HASH,
       phone: "+2348093329901",
+      city: "Kano",
+      state: "Kano State",
+      country: "Nigeria",
       company_registration_no: "RC-3920194",
       tax_id: "TIN-59382019",
       bank_name: "Access Bank PLC",

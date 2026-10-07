@@ -28,6 +28,10 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
+.marketplace-home > section:not(#product-catalog) {
+  display: none;
+}
+
 .text-metallic-gold {
   background: linear-gradient(180deg, #FDE68A 0%, #D97706 100%);
   -webkit-background-clip: text;

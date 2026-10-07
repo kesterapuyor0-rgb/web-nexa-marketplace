@@ -8,7 +8,7 @@ import {
   ServerApiVersion
 } from "mongodb";
 const globalMongo = globalThis;
-async function getDatabase() {
+export async function getDatabase() {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error("MONGODB_URI is not configured");
   if (!globalMongo.webnexaMongoClient) {
@@ -43,6 +43,18 @@ async function getDatabase() {
   }
   await globalMongo.webnexaMongoIndexes;
   return db;
+}
+export async function getBuyerForRequest(req, db) {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith("Bearer ")) return null;
+  let decoded;
+  try {
+    decoded = jwt.verify(authorization.slice(7), jwtSecret());
+  } catch {
+    return null;
+  }
+  if (decoded.role !== "buyer") return null;
+  return db.collection("accounts").findOne({ role: "buyer", $or: [{ _id: decoded.id }, { id: decoded.id }] });
 }
 function jwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -155,8 +167,8 @@ async function createAccount(db, role, body, res) {
       phone: text(body.phone),
       shipping_address_line1: text(body.shipping_address_line1),
       shipping_address_line2: text(body.shipping_address_line2),
-      city: text(body.city) || "Lagos",
-      state: text(body.state) || "Lagos State",
+      city: text(body.city),
+      state: text(body.state),
       country: text(body.country) || "Nigeria",
       postal_code: text(body.postal_code)
     };
@@ -165,6 +177,9 @@ async function createAccount(db, role, body, res) {
       business_name: text(body.business_name),
       contact_person: text(body.contact_person),
       phone: text(body.phone),
+      city: text(body.city),
+      state: text(body.state),
+      country: text(body.country) || "Nigeria",
       company_registration_no: text(body.company_registration_no),
       tax_id: text(body.tax_id),
       bank_name: text(body.bank_name),
@@ -391,8 +406,8 @@ async function handleMongoGoogleAuth(req, res) {
         phone: "",
         shipping_address_line1: "",
         shipping_address_line2: "",
-        city: "Lagos",
-        state: "Lagos State",
+        city: "",
+        state: "",
         country: "Nigeria",
         postal_code: "",
         created_at: now,

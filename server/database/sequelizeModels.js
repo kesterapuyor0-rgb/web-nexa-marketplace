@@ -155,6 +155,9 @@ export class Vendor extends Model {
   email;
   password_hash;
   phone;
+  city;
+  state;
+  country;
   company_registration_no;
   tax_id;
   bank_name;
@@ -205,6 +208,19 @@ Vendor.init(
     phone: {
       type: DataTypes.STRING(50),
       allowNull: false
+    },
+    city: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    state: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    country: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      defaultValue: "Nigeria"
     },
     company_registration_no: {
       type: DataTypes.STRING(100),

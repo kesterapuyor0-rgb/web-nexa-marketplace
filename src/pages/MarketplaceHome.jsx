@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ProductCartControl } from "../components/ProductCartControl.jsx";
 import { ProductDetailsModal } from "../components/ProductDetailsModal.jsx";
 import { Logo } from "../components/Logo.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
@@ -28,11 +29,14 @@ import {
   Layers
 } from "lucide-react";
 export const MarketplaceHome = () => {
+  const { token, role } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSearch = searchParams.get("search") || "";
   const urlCategory = searchParams.get("category") || "All";
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [locationInfo, setLocationInfo] = useState(null);
+  const [catalogError, setCatalogError] = useState("");
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [selectedCategory, setSelectedCategory] = useState(urlCategory);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -113,6 +117,8 @@ export const MarketplaceHome = () => {
   ];
   useEffect(() => {
     loadProducts();
+  }, [token, role]);
+  useEffect(() => {
     const slideTimer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % promoSlides.length);
     }, 6500);
@@ -135,25 +141,35 @@ export const MarketplaceHome = () => {
   }, []);
   const loadProducts = async () => {
     setIsLoading(true);
+    setCatalogError("");
     try {
-      const res = await fetch("/api/products");
-      if (res.ok) {
-        const data = await res.json();
-        setProducts(data.products || []);
-      }
+      const res = await fetch("/api/products", {
+        headers: token && role === "buyer" ? { Authorization: `Bearer ${token}` } : {}
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Product catalog is unavailable.");
+      setProducts(data.products || []);
+      setLocationInfo(data.location || null);
     } catch (e) {
       console.error("Failed to load products:", e);
+      setCatalogError(e.message || "Product catalog is unavailable.");
+      setProducts([]);
+      setLocationInfo(null);
     } finally {
       setIsLoading(false);
     }
   };
   const filteredProducts = products.filter((p) => {
-    const matchesCat = selectedCategory === "All" || p.category.toLowerCase().includes(selectedCategory.toLowerCase()) || selectedCategory.toLowerCase().includes(p.category.toLowerCase());
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase()) || p.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()) || p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()) || (p.tags || []).some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const productCategory = String(p.category || "").toLowerCase();
+    const matchesCat = selectedCategory === "All" || productCategory.includes(selectedCategory.toLowerCase()) || selectedCategory.toLowerCase().includes(productCategory);
+    const query = searchQuery.trim().toLowerCase();
+    const searchable = [p.title, p.description, p.vendor_name, p.brand, p.category, ...(p.tags || [])].filter(Boolean).join(" ").toLowerCase();
+    const matchesSearch = !query || searchable.includes(query);
     return matchesCat && matchesSearch;
   });
+  const buyerLocality = locationInfo?.buyer?.city || locationInfo?.buyer?.state || locationInfo?.buyer?.country;
   const flashSaleItems = products.filter((p) => p.discount_percent && p.discount_percent >= 10 || p.price > 4e5);
-  return <div className="space-y-8 pb-20">
+  return <div className="marketplace-home space-y-8 pb-20">
       {
     /* 1. TOP MARKETPLACE HERO WITH WEBNEXA TRUST WIDGET */
   }
@@ -474,42 +490,36 @@ export const MarketplaceHome = () => {
     /* 4. MAIN PRODUCT CATALOG WITH SEARCH, FILTERS & PRODUCT CARDS */
   }
       <section id="product-catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {
-    /* Catalog controls */
-  }
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#18181e] p-4 rounded-2xl border border-zinc-800">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-zinc-500">Catalog results</p>
-            <p className="text-sm font-semibold text-zinc-200">
-              {selectedCategory === "All" ? "All verified products" : selectedCategory}
-            </p>
+        <div className="space-y-4 border-b border-zinc-800 pb-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Marketplace</h1>
+              <p className="mt-1 text-xs text-zinc-400">
+                {locationInfo?.scope && locationInfo.scope !== "all"
+                  ? `Showing ${locationInfo.scope}-matched vendor listings${buyerLocality ? ` near ${buyerLocality}` : ""}.`
+                  : locationInfo?.message || "Browse products from approved vendors."}
+              </p>
+            </div>
+            <p className="text-xs text-zinc-400">{filteredProducts.length} products</p>
           </div>
-
-          {
-    /* Search box */
-  }
-          <div className="relative w-full md:w-80">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
-            <input
-    type="text"
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    placeholder="Search gear, brands, vendors..."
-    className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500"
-  />
-            {searchQuery && <button
-    onClick={() => setSearchQuery("")}
-    className="absolute right-3 top-2.5 text-xs text-zinc-500 hover:text-zinc-300"
-  >
-                Clear
-              </button>}
+          <div role="group" aria-label="Filter products by category" className="flex gap-2 overflow-x-auto pb-1">
+            {categories.map(({ name, icon: Icon }) => <button
+      key={name}
+      type="button"
+      onClick={() => selectCategory(name)}
+      aria-pressed={selectedCategory.toLowerCase() === name.toLowerCase()}
+      className={`flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold transition-colors ${selectedCategory.toLowerCase() === name.toLowerCase() ? "border-purple-400/60 bg-purple-500/15 text-purple-200" : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-600 hover:text-zinc-100"}`}
+    >
+              <Icon className="h-3.5 w-3.5" />
+              {name}
+            </button>)}
           </div>
         </div>
 
         {
     /* Product Cards Grid */
   }
-        {isLoading ? <div className="p-16 text-center text-zinc-400 text-xs">
+        {catalogError ? <div role="alert" className="p-10 text-center text-sm text-rose-300">{catalogError}</div> : isLoading ? <div className="p-16 text-center text-zinc-400 text-xs">
             Loading WebNexa verified marketplace catalog...
           </div> : filteredProducts.length === 0 ? <div className="p-16 text-center bg-[#18181e] rounded-2xl border border-zinc-800 space-y-2">
             <ShoppingBag className="w-12 h-12 text-zinc-600 mx-auto" />

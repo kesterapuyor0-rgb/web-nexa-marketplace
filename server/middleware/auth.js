@@ -21,6 +21,22 @@ export function requireBuyerAuth(req, res, next) {
     res.status(401).json({ error: "Invalid or expired session token." });
   }
 }
+export function optionalBuyerAuth(req, _res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    next();
+    return;
+  }
+  try {
+    const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+    if (decoded.role === "buyer") {
+      req.buyer = store.buyers.find((candidate) => candidate.id === decoded.id) || null;
+    }
+  } catch {
+    req.buyer = null;
+  }
+  next();
+}
 export function requireVendorAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {

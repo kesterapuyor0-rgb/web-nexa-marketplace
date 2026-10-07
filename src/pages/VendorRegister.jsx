@@ -20,6 +20,9 @@ export const VendorRegister = () => {
     email: "",
     password: "",
     phone: "",
+    city: "",
+    state: "",
+    country: "Nigeria",
     company_registration_no: "",
     tax_id: "",
     bank_name: "Zenith Bank PLC",
@@ -173,6 +176,18 @@ export const VendorRegister = () => {
     placeholder="e.g. TIN-90823412"
     className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white focus:outline-none focus:border-purple-500 font-mono"
   />
+              </div>
+              <div>
+                <label className="block text-zinc-400 mb-1">Business City</label>
+                <input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="e.g. Lagos" className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white focus:outline-none focus:border-purple-500" />
+              </div>
+              <div>
+                <label className="block text-zinc-400 mb-1">State / Province</label>
+                <input type="text" name="state" value={formData.state} onChange={handleChange} placeholder="e.g. Lagos State" className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white focus:outline-none focus:border-purple-500" />
+              </div>
+              <div>
+                <label className="block text-zinc-400 mb-1">Country</label>
+                <input type="text" name="country" value={formData.country} onChange={handleChange} className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white focus:outline-none focus:border-purple-500" />
               </div>
             </div>
           </div>
