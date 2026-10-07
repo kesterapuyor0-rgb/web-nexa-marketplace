@@ -207,43 +207,54 @@ export const VendorDashboard = () => {
     /* Top Banner / Vendor Status Card */
   }
       <div className="bg-[#18181e] border border-zinc-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-900 to-zinc-900 border border-purple-500/30 flex items-center justify-center text-purple-300 shrink-0 overflow-hidden">
-              {vendor?.store_logo_url ? <img src={vendor.store_logo_url} alt={`${vendor.business_name} logo`} className="h-full w-full object-cover" /> : <Store className="w-7 h-7" />}
-            </div>
-            <div className="mt-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 hover:border-purple-500">
+        <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="flex w-full shrink-0 items-center gap-3 sm:w-auto sm:flex-col sm:items-start">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900 to-zinc-900 text-purple-300">
+                {vendor?.store_logo_url ? <img src={vendor.store_logo_url} alt={`${vendor.business_name || "Vendor"} logo`} className="h-full w-full object-cover" /> : <Store className="h-7 w-7" />}
+              </div>
+              <div className="min-w-0">
+                <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 hover:border-purple-500">
                 {logoSaving ? "Saving logo..." : "Upload brand logo"}
                 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleLogoUpload} disabled={logoSaving} className="hidden" />
-              </label>
-              {logoError && <p className="mt-1 text-xs text-red-300">{logoError}</p>}
+                </label>
+                {logoError && <p className="mt-1 break-words text-xs text-red-300">{logoError}</p>}
+              </div>
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-bold text-white font-cinzel">
+            <div className="w-full min-w-0 flex-1">
+              <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <h1 className="max-w-full break-words text-2xl font-bold text-white [overflow-wrap:anywhere] font-cinzel">
                   {vendor?.business_name || "Vendor Hub"}
                 </h1>
-                {isApproved ? <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                {isApproved ? <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Verified & Authorized Merchant
-                  </span> : <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1 animate-pulse">
+                  </span> : <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400">
                     <Clock className="w-3.5 h-3.5" />
-                    Pending Verification by The WebNexa Platform
+                    <span className="break-words">Pending Verification by The WebNexa Platform</span>
                   </span>}
               </div>
-              <p className="text-xs text-zinc-400 mt-1">
-                Contact: <span className="text-zinc-200">{vendor?.contact_person}</span> • Email:{" "}
-                <span className="text-zinc-200">{vendor?.email}</span> • CAC/RC:{" "}
-                <span className="font-mono text-purple-300">{vendor?.company_registration_no}</span>
-              </p>
+              <dl className="mt-4 grid min-w-0 grid-cols-1 gap-3 text-xs sm:grid-cols-2">
+                <div className="min-w-0">
+                  <dt className="text-zinc-500">Contact person</dt>
+                  <dd className="mt-1 break-words text-zinc-200 [overflow-wrap:anywhere]">{vendor?.contact_person || "Not provided"}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-zinc-500">Email</dt>
+                  <dd className="mt-1 break-all text-zinc-200">{vendor?.email || "Not provided"}</dd>
+                </div>
+                <div className="min-w-0 sm:col-span-2">
+                  <dt className="text-zinc-500">CAC/RC registration</dt>
+                  <dd className="mt-1 break-all font-mono text-purple-300">{vendor?.company_registration_no || "Not provided"}</dd>
+                </div>
+              </dl>
             </div>
           </div>
 
           {
     /* Action button */
   }
-          <div>
+          <div className="w-full shrink-0 sm:w-auto">
             <button
     id="add-product-open-btn"
     onClick={() => {
@@ -255,7 +266,7 @@ export const VendorDashboard = () => {
       }
       setIsAddProductOpen(true);
     }}
-    className={`py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${isApproved ? "cta-gradient text-white shadow-lg hover:opacity-90" : "bg-zinc-800 text-zinc-400 border border-zinc-700 cursor-not-allowed opacity-75"}`}
+    className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all sm:w-auto ${isApproved ? "cta-gradient text-white shadow-lg hover:opacity-90" : "bg-zinc-800 text-zinc-400 border border-zinc-700 cursor-not-allowed opacity-75"}`}
   >
               <Plus className="w-4 h-4" />
               <span>{isApproved ? "Add New Product" : "Listing Disabled (Pending Verification)"}</span>
