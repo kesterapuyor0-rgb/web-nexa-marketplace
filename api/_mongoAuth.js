@@ -55,13 +55,34 @@ function publicAccount(account) {
   const { password_hash: _passwordHash, ...safeAccount } = account;
   return safeAccount;
 }
-function sendConfigurationError(res, error) {
-  const message = error instanceof Error ? error.message : "";
-  if (message === "MONGODB_URI is not configured" || message.startsWith("JWT_SECRET")) {
+function redactMongoUri(value) {
+  let message = String(value);
+  const uri = process.env.MONGODB_URI;
+  if (uri) message = message.replaceAll(uri, "[REDACTED_MONGODB_URI]");
+  return message.replace(/mongodb(?:\+srv)?:\/\/[^/\s@]+@/gi, "mongodb+srv://[REDACTED]@");
+}
+function sendConfigurationError(res, error, context = {}) {
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  const errorDetails = error instanceof Error ? {
+    name: error.name,
+    message: redactMongoUri(error.message),
+    code: error.code,
+    codeName: error.codeName,
+    stack: error.stack ? redactMongoUri(error.stack) : undefined
+  } : { message: redactMongoUri(error) };
+  const statusCode = Number(error?.statusCode || error?.status);
+  if (statusCode >= 400 && statusCode < 500) {
+    console.warn("[auth] Request rejected", { ...context, ...errorDetails });
+    res.status(statusCode).json({
+      error: statusCode === 400 ? "Request body must be valid JSON." : "The request could not be processed."
+    });
+    return;
+  }
+  console.error("[auth] Request failed", { ...context, ...errorDetails });
+  if (rawMessage === "MONGODB_URI is not configured" || rawMessage.startsWith("JWT_SECRET")) {
     res.status(503).json({ error: "Authentication is not configured. Check the Vercel environment variables." });
     return;
   }
-  console.error("[auth] MongoDB request failed:", error);
   res.status(503).json({ error: "The authentication database is temporarily unavailable." });
 }
 function normalizeEmail(value) {
@@ -252,12 +273,12 @@ async function currentAccount(db, role, req, res) {
 async function handleMongoAuth(req, res, role, operation) {
   try {
     jwtSecret();
+    const body = operation === "me" ? {} : req.body && typeof req.body === "object" ? req.body : {};
     const db = await getDatabase();
     if (operation === "me") {
       await currentAccount(db, role, req, res);
       return;
     }
-    const body = req.body && typeof req.body === "object" ? req.body : {};
     if (operation === "register") {
       if (role === "admin") {
         res.status(405).json({ error: "Administrator registration is disabled." });
@@ -268,7 +289,7 @@ async function handleMongoAuth(req, res, role, operation) {
     }
     await login(db, role, body, res);
   } catch (error) {
-    sendConfigurationError(res, error);
+    sendConfigurationError(res, error, { role, operation });
   }
 }
 async function handleMongoHealth(_req, res) {
@@ -277,7 +298,7 @@ async function handleMongoHealth(_req, res) {
     await db.command({ ping: 1 });
     res.status(200).json({ status: "ok", service: "WebNexa Authentication API", database: "MongoDB Atlas connected" });
   } catch (error) {
-    sendConfigurationError(res, error);
+    sendConfigurationError(res, error, { operation: "health" });
   }
 }
 async function handleMongoGoogleAuth(req, res) {
@@ -360,7 +381,7 @@ async function handleMongoGoogleAuth(req, res) {
       role
     });
   } catch (error) {
-    sendConfigurationError(res, error);
+    sendConfigurationError(res, error, { operation: "google" });
   }
 }
 export {
