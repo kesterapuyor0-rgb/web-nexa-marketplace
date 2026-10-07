@@ -43,6 +43,7 @@ export const VendorRegister = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
   const { loginVendor } = useAuth();
   const navigate = useNavigate();
   const handleChange = (e) => {
@@ -84,6 +85,7 @@ export const VendorRegister = () => {
     setError(null);
     try {
       if (formData.requested_categories.length === 0) {
+        setIsCategoriesExpanded(true);
         throw new Error("Select at least one marketplace category for your business.");
       }
       const res = await fetch("/api/auth/vendor/register", {
@@ -219,19 +221,33 @@ export const VendorRegister = () => {
               <option value="GENERAL">General marketplace vendor</option>
               <option value="RESTAURANT_FOOD">Restaurant / Food Vendor</option>
             </select>
-            <fieldset>
-              <legend className="block text-zinc-400 mb-1">Marketplace categories *</legend>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {MARKETPLACE_CATEGORIES.map((category) => {
-                  const selected = formData.requested_categories.includes(category);
-                  return <label key={category} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-xs leading-4 transition-colors sm:px-3 ${selected ? "border-purple-500 bg-purple-500/10 text-purple-200" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-600"}`}>
-                    <input type="checkbox" checked={selected} onChange={() => toggleCategory(category)} className="h-4 w-4 shrink-0 accent-purple-600" />
-                    {category}
-                  </label>;
-                })}
-              </div>
-              <p className="mt-2 text-[10px] text-zinc-500">Select one or more categories that describe your business.</p>
-            </fieldset>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-3">
+              <button
+                type="button"
+                aria-expanded={isCategoriesExpanded}
+                aria-controls="marketplace-category-options"
+                onClick={() => setIsCategoriesExpanded((expanded) => !expanded)}
+                className="flex min-h-10 w-full items-center justify-between gap-3 text-left text-xs font-medium text-zinc-200"
+              >
+                <span>Choose marketplace categories *</span>
+                <span className="shrink-0 text-[10px] text-zinc-400">
+                  {formData.requested_categories.length} selected {isCategoriesExpanded ? "−" : "+"}
+                </span>
+              </button>
+              {isCategoriesExpanded && <fieldset id="marketplace-category-options" className="mt-3">
+                <legend className="sr-only">Marketplace categories</legend>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {MARKETPLACE_CATEGORIES.map((category) => {
+                    const selected = formData.requested_categories.includes(category);
+                    return <label key={category} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-xs leading-4 transition-colors sm:px-3 ${selected ? "border-purple-500 bg-purple-500/10 text-purple-200" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-600"}`}>
+                      <input type="checkbox" checked={selected} onChange={() => toggleCategory(category)} className="h-4 w-4 shrink-0 accent-purple-600" />
+                      {category}
+                    </label>;
+                  })}
+                </div>
+                <p className="mt-2 text-[10px] text-zinc-500">Select one or more categories that describe your business.</p>
+              </fieldset>}
+            </div>
             {formData.business_category === "RESTAURANT_FOOD" && <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-zinc-400 mb-1">Restaurant / Brand Logo</label>
