@@ -18,6 +18,8 @@ View your app in AI Studio: https://ai.studio/apps/d56b6ffc-5d9f-4e33-a95d-4b17f
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+<<<<<<< HEAD
+=======
 
 ## Vercel authentication and MongoDB Atlas
 
@@ -34,3 +36,4 @@ Add these environment variables to the Vercel project before deploying:
 After deployment, `GET /api/health` reports whether the function can reach MongoDB Atlas. Keep the connection string and administrator password in Vercel's Environment Variables; do not commit them.
 
 The existing `server.ts` application still contains the rest of the marketplace API and uses MySQL and Socket.IO. Those routes are not implemented by the Vercel authentication functions and need a separately hosted backend or a broader migration before the catalog, checkout, messaging, and dashboard APIs can run on Vercel.
+>>>>>>> 3a90098d0e5978809734a229779f9c9ea45f4d8d
