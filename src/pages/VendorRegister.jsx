@@ -76,7 +76,10 @@ export const VendorRegister = () => {
       const res = await fetch("/api/auth/vendor/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          location: [formData.city, formData.state, formData.country].map((part) => part.trim()).filter(Boolean).join(", ")
+        })
       });
       const data = await res.json();
       if (!res.ok) {

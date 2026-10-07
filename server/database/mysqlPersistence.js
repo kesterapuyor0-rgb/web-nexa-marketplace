@@ -33,18 +33,20 @@ export async function initializeMysqlDatabase() {
     const schemaPath = path.join(process.cwd(), "server", "database", "schema.sql");
     const schema = await fs.readFile(schemaPath, "utf8");
     await pool.query(schema);
-    const vendorLocationColumns = [
-      ["city", "VARCHAR(100) NULL"],
-      ["state", "VARCHAR(100) NULL"],
-      ["country", "VARCHAR(100) NOT NULL DEFAULT 'Nigeria'"]
+    const locationColumns = [
+      ["buyers", "location", "VARCHAR(255) NULL"],
+      ["vendors", "city", "VARCHAR(100) NULL"],
+      ["vendors", "state", "VARCHAR(100) NULL"],
+      ["vendors", "country", "VARCHAR(100) NOT NULL DEFAULT 'Nigeria'"],
+      ["vendors", "location", "VARCHAR(255) NULL"]
     ];
-    for (const [column, definition] of vendorLocationColumns) {
+    for (const [table, column, definition] of locationColumns) {
       const [existing] = await pool.execute(
-        "SELECT COUNT(*) AS count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vendors' AND COLUMN_NAME = ?",
-        [column]
+        "SELECT COUNT(*) AS count FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+        [table, column]
       );
       if (Number(existing[0].count) === 0) {
-        await pool.query(`ALTER TABLE vendors ADD COLUMN ${column} ${definition}`);
+        await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
       }
     }
     await pool.query("SELECT 1");
@@ -103,6 +105,7 @@ export async function saveVendorToMysql(vendor) {
         city,
         state,
         country,
+        location,
         company_registration_no,
         tax_id,
         bank_name,
@@ -120,7 +123,7 @@ export async function saveVendorToMysql(vendor) {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         business_name = VALUES(business_name),
         contact_person = VALUES(contact_person),
@@ -128,6 +131,7 @@ export async function saveVendorToMysql(vendor) {
         city = VALUES(city),
         state = VALUES(state),
         country = VALUES(country),
+        location = VALUES(location),
         company_registration_no = VALUES(company_registration_no),
         tax_id = VALUES(tax_id),
         bank_name = VALUES(bank_name),
@@ -154,6 +158,7 @@ export async function saveVendorToMysql(vendor) {
       vendor.city || null,
       vendor.state || null,
       vendor.country || "Nigeria",
+      vendor.location || null,
       vendor.company_registration_no,
       vendor.tax_id || null,
       vendor.bank_name,
@@ -188,11 +193,12 @@ export async function saveBuyerToMysql(buyer) {
         city,
         state,
         country,
+        location,
         postal_code,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         full_name = VALUES(full_name),
         phone = VALUES(phone),
@@ -201,6 +207,7 @@ export async function saveBuyerToMysql(buyer) {
         city = VALUES(city),
         state = VALUES(state),
         country = VALUES(country),
+        location = VALUES(location),
         postal_code = VALUES(postal_code),
         updated_at = VALUES(updated_at)
     `,
@@ -215,6 +222,7 @@ export async function saveBuyerToMysql(buyer) {
       buyer.city,
       buyer.state,
       buyer.country,
+      buyer.location || null,
       buyer.postal_code,
       formatMysqlDatetime(buyer.created_at),
       formatMysqlDatetime(buyer.updated_at)
@@ -273,6 +281,7 @@ export async function findBuyerByEmail(email) {
         city,
         state,
         country,
+        location,
         postal_code,
         created_at,
         updated_at
@@ -298,6 +307,7 @@ export async function findVendorByEmail(email) {
         city,
         state,
         country,
+        location,
         company_registration_no,
         tax_id,
         bank_name,
@@ -336,6 +346,7 @@ export async function findVendorByRegistrationNumber(registrationNumber) {
         city,
         state,
         country,
+        location,
         company_registration_no,
         tax_id,
         bank_name,

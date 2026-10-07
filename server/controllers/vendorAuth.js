@@ -59,6 +59,7 @@ export async function vendorRegister(req, res) {
       city: city?.trim() || "",
       state: state?.trim() || "",
       country: country?.trim() || "Nigeria",
+      location: req.body.location?.trim() || [city, state, country || "Nigeria"].filter(Boolean).join(", "),
       company_registration_no: company_registration_no.trim(),
       tax_id: tax_id || "",
       bank_name: bank_name.trim(),

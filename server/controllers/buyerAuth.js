@@ -28,6 +28,7 @@ export async function buyerRegister(req, res) {
       city: city || "",
       state: state || "",
       country: country || "Nigeria",
+      location: req.body.location || [city, state, country || "Nigeria"].filter(Boolean).join(", "),
       postal_code: postal_code || "",
       created_at: (/* @__PURE__ */ new Date()).toISOString(),
       updated_at: (/* @__PURE__ */ new Date()).toISOString()

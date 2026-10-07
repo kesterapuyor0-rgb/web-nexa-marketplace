@@ -60,6 +60,7 @@ export async function googleLogin(req, res) {
         city: "",
         state: "",
         country: "Nigeria",
+        location: "Nigeria",
         postal_code: "",
         created_at: timestamp,
         updated_at: timestamp

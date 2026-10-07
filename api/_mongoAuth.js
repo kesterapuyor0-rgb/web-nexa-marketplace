@@ -170,6 +170,7 @@ async function createAccount(db, role, body, res) {
       city: text(body.city),
       state: text(body.state),
       country: text(body.country) || "Nigeria",
+      location: text(body.location) || [text(body.city), text(body.state), text(body.country) || "Nigeria"].filter(Boolean).join(", "),
       postal_code: text(body.postal_code)
     };
   } else {
@@ -180,6 +181,7 @@ async function createAccount(db, role, body, res) {
       city: text(body.city),
       state: text(body.state),
       country: text(body.country) || "Nigeria",
+      location: text(body.location) || [text(body.city), text(body.state), text(body.country) || "Nigeria"].filter(Boolean).join(", "),
       company_registration_no: text(body.company_registration_no),
       tax_id: text(body.tax_id),
       bank_name: text(body.bank_name),

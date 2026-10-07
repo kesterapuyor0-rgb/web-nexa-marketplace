@@ -13,7 +13,8 @@ function normalizeProduct(product, vendor) {
     vendor_location: resolvedVendor ? {
       city: resolvedVendor.city || vendor_location?.city || location?.city || "",
       state: resolvedVendor.state || vendor_location?.state || location?.state || "",
-      country: resolvedVendor.country || vendor_location?.country || location?.country || ""
+      country: resolvedVendor.country || vendor_location?.country || location?.country || "",
+      location: resolvedVendor.location || vendor_location?.location || (typeof location === "string" ? location : location?.location) || ""
     } : vendor_location || location || null
   };
 }
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
       const vendorAccounts = vendorIds.length ? await db.collection("accounts").find({
         role: "vendor",
         $or: [{ id: { $in: vendorIds } }, { _id: { $in: vendorIds } }]
-      }).project({ id: 1, business_name: 1, city: 1, state: 1, country: 1, is_approved: 1 }).toArray() : [];
+      }).project({ id: 1, business_name: 1, city: 1, state: 1, country: 1, location: 1, is_approved: 1 }).toArray() : [];
       vendors = new Map(vendorAccounts.map((vendor) => [String(vendor.id || vendor._id), vendor]));
       products = storedProducts.flatMap((product) => {
         const vendor = vendors.get(String(product.vendor_id || "")) || product.vendor;

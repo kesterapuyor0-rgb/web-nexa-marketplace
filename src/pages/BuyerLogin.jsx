@@ -36,7 +36,8 @@ export const BuyerLogin = () => {
       password,
       shipping_address_line1: address,
       city,
-      state
+      state,
+      location: [city, state].map((part) => part.trim()).filter(Boolean).join(", ")
     } : { email, password };
     try {
       const res = await fetch(endpoint, {

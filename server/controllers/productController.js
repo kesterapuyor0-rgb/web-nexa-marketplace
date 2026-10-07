@@ -23,7 +23,7 @@ export async function getProducts(req, res) {
     const productsWithRatings = locationFiltered.products.map((product) => {
       const rating = getVendorRating(product.vendor_id);
       const vendor = store.vendors.find((candidate) => candidate.id === product.vendor_id);
-      const withLocation = vendor ? { ...product, vendor_location: { city: vendor.city || "", state: vendor.state || "", country: vendor.country || "" } } : product;
+      const withLocation = vendor ? { ...product, vendor_location: { city: vendor.city || "", state: vendor.state || "", country: vendor.country || "", location: vendor.location || "" } } : product;
       return rating.review_count > 0 ? { ...withLocation, rating: rating.average_rating, reviews_count: rating.review_count } : withLocation;
     });
     res.json({

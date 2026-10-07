@@ -68,16 +68,29 @@ class MarketplaceStore {
     try {
       if (!fs.existsSync(filePath)) return;
       const saved = JSON.parse(fs.readFileSync(filePath, "utf8"));
-      if (Array.isArray(saved.buyers)) this.buyers = saved.buyers;
+      if (Array.isArray(saved.buyers)) {
+        this.buyers = saved.buyers.map((buyer) => {
+          const seedBuyer = this.buyers.find((seed) => seed.id === buyer.id);
+          return {
+            ...seedBuyer,
+            ...buyer,
+            location: buyer.location || seedBuyer?.location || [buyer.city, buyer.state, buyer.country].filter(Boolean).join(", ")
+          };
+        });
+      }
       if (Array.isArray(saved.vendors)) {
         this.vendors = saved.vendors.map((vendor) => {
           const seedVendor = this.vendors.find((seed) => seed.id === vendor.id);
+          const city = vendor.city || seedVendor?.city || "";
+          const state = vendor.state || seedVendor?.state || "";
+          const country = vendor.country || seedVendor?.country || "Nigeria";
           return {
             ...seedVendor,
             ...vendor,
-            city: vendor.city || seedVendor?.city || "",
-            state: vendor.state || seedVendor?.state || "",
-            country: vendor.country || seedVendor?.country || "Nigeria"
+            city,
+            state,
+            country,
+            location: vendor.location || seedVendor?.location || [city, state, country].filter(Boolean).join(", ")
           };
         });
       }
@@ -129,6 +142,7 @@ class MarketplaceStore {
       city: "Lagos",
       state: "Lagos State",
       country: "Nigeria",
+        location: "Lagos, Lagos State, Nigeria",
       postal_code: "105102",
       created_at: new Date(Date.now() - 864e5 * 12).toISOString(),
       updated_at: (/* @__PURE__ */ new Date()).toISOString()
@@ -143,6 +157,7 @@ class MarketplaceStore {
       city: "Abuja",
       state: "FCT",
       country: "Nigeria",
+        location: "Abuja, FCT, Nigeria",
       postal_code: "900271",
       created_at: new Date(Date.now() - 864e5 * 5).toISOString(),
       updated_at: (/* @__PURE__ */ new Date()).toISOString()
@@ -159,6 +174,7 @@ class MarketplaceStore {
       city: "Lagos",
       state: "Lagos State",
       country: "Nigeria",
+        location: "Lagos, Lagos State, Nigeria",
       company_registration_no: "RC-1849204",
       tax_id: "TIN-90823412",
       bank_name: "Zenith Bank PLC",
@@ -186,6 +202,7 @@ class MarketplaceStore {
       city: "Abuja",
       state: "FCT",
       country: "Nigeria",
+        location: "Abuja, FCT, Nigeria",
       company_registration_no: "RC-2049182",
       tax_id: "TIN-10923847",
       bank_name: "Guaranty Trust Bank (GTBank)",
@@ -213,6 +230,7 @@ class MarketplaceStore {
       city: "Kano",
       state: "Kano State",
       country: "Nigeria",
+        location: "Kano, Kano State, Nigeria",
       company_registration_no: "RC-3920194",
       tax_id: "TIN-59382019",
       bank_name: "Access Bank PLC",

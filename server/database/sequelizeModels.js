@@ -81,6 +81,7 @@ export class Buyer extends Model {
   city;
   state;
   country;
+  location;
   postal_code;
   created_at;
   updated_at;
@@ -135,6 +136,10 @@ Buyer.init(
       allowNull: false,
       defaultValue: "Nigeria"
     },
+    location: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
     postal_code: {
       type: DataTypes.STRING(20),
       allowNull: true
@@ -158,6 +163,7 @@ export class Vendor extends Model {
   city;
   state;
   country;
+  location;
   company_registration_no;
   tax_id;
   bank_name;
@@ -221,6 +227,10 @@ Vendor.init(
       type: DataTypes.STRING(100),
       allowNull: false,
       defaultValue: "Nigeria"
+    },
+    location: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     },
     company_registration_no: {
       type: DataTypes.STRING(100),
