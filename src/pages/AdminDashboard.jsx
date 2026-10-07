@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
-import { WalletPanel } from "../components/WalletPanel.jsx";
 import {
   ShieldAlert,
   CheckCircle2,
@@ -214,7 +213,6 @@ export const AdminDashboard = () => {
             <div className="w-14 h-14 rounded-2xl bg-red-950/40 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
               <ShieldAlert className="w-8 h-8" />
             </div>
-            <WalletPanel token={token} role="admin" />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-white font-cinzel">WebNexa Executive Oversight</h1>

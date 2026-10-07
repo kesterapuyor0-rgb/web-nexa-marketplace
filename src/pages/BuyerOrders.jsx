@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 import { VendorRatingModal } from "../components/VendorRatingModal.jsx";
-import { WalletPanel } from "../components/WalletPanel.jsx";
 import {
   Package,
   ShieldCheck,
@@ -115,8 +114,6 @@ export const BuyerOrders = () => {
             Account: <span className="text-zinc-200">{buyer?.full_name}</span> ({buyer?.email})
           </p>
         </div>
-        <WalletPanel token={token} role="buyer" />
-
         <button
     onClick={() => navigate("/")}
     className="px-4 py-2 rounded-xl cta-gradient text-white text-xs font-semibold shadow self-start sm:self-auto"

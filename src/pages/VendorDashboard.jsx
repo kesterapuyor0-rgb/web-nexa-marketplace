@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
-import { WalletPanel } from "../components/WalletPanel.jsx";
 import {
   Store,
   CheckCircle2,
@@ -297,23 +296,10 @@ export const VendorDashboard = () => {
           </div>}
       </div>
 
-      <WalletPanel token={token} role="vendor" vendor={vendor} />
-
       {
     /* Metrics Row */
   }
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="p-5 rounded-2xl bg-[#18181e] border border-zinc-800">
-          <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-            <span>Pending Platform Settlement</span>
-            <Lock className="w-4 h-4 text-purple-400" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-purple-300">
-            ₦{(vendor?.escrow_pending_balance || 0).toLocaleString()}
-          </div>
-          <p className="text-[11px] text-zinc-500 mt-1">Held until buyer confirms fulfillment</p>
-        </div>
-
+      <div className="grid grid-cols-1 gap-4">
         <div className="p-5 rounded-2xl bg-[#18181e] border border-zinc-800">
           <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
             <span>Catalog Items</span>

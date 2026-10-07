@@ -18,7 +18,7 @@ import {
   LogIn
 } from "lucide-react";
 import { SearchAutocomplete } from "./SearchAutocomplete.jsx";
-import { Wallet } from "lucide-react";
+import { WalletPanel } from "./WalletPanel.jsx";
 export const Navbar = () => {
   const { role, buyer, vendor, admin, token, logout } = useAuth();
   const { totalCount, setIsCartOpen } = useCart();
@@ -158,15 +158,7 @@ export const Navbar = () => {
               </span>}
           </button>}
 
-          {role === "vendor" && <button
-      type="button"
-      onClick={() => navigate("/vendor/dashboard")}
-      className="flex h-10 items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/30 px-2.5 text-xs text-emerald-200"
-      aria-label="Open vendor wallet"
-    >
-              <Wallet className="h-4 w-4" />
-              <span>Wallet</span>
-            </button>}
+          {role === "vendor" && <WalletPanel token={token} role={role} vendor={vendor} />}
 
           {
     /* Standard Auth Controls: Authenticated User Profile Menu vs. Guest Sign In / Register */
