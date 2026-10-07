@@ -213,24 +213,25 @@ export const VendorRegister = () => {
     /* Section 2: Contact & Access */
   }
           <div className="space-y-3 pt-2 border-t border-zinc-800">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400">Food & Restaurant Profile</h4>
-            <select name="business_category" value={formData.business_category} onChange={handleChange} className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-purple-400">Business Profile & Marketplace Categories</h4>
+            <label htmlFor="business-category" className="block text-zinc-400 mb-1">Business profile type</label>
+            <select id="business-category" name="business_category" value={formData.business_category} onChange={handleChange} className="w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white">
               <option value="GENERAL">General marketplace vendor</option>
               <option value="RESTAURANT_FOOD">Restaurant / Food Vendor</option>
             </select>
-            <div>
-              <label className="block text-zinc-400 mb-1">Marketplace Categories *</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <fieldset>
+              <legend className="block text-zinc-400 mb-1">Marketplace categories *</legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {MARKETPLACE_CATEGORIES.map((category) => {
                   const selected = formData.requested_categories.includes(category);
-                  return <label key={category} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-xs transition-colors ${selected ? "border-purple-500 bg-purple-500/10 text-purple-200" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-600"}`}>
-                    <input type="checkbox" checked={selected} onChange={() => toggleCategory(category)} className="h-4 w-4 accent-purple-600" />
+                  return <label key={category} className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-xs leading-4 transition-colors sm:px-3 ${selected ? "border-purple-500 bg-purple-500/10 text-purple-200" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-600"}`}>
+                    <input type="checkbox" checked={selected} onChange={() => toggleCategory(category)} className="h-4 w-4 shrink-0 accent-purple-600" />
                     {category}
                   </label>;
                 })}
               </div>
               <p className="mt-2 text-[10px] text-zinc-500">Select one or more categories that describe your business.</p>
-            </div>
+            </fieldset>
             {formData.business_category === "RESTAURANT_FOOD" && <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-zinc-400 mb-1">Restaurant / Brand Logo</label>
