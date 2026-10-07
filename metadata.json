@@ -1,0 +1,6 @@
+{
+  "name": "WebNexa - Multi-Vendor Marketplace",
+  "description": "Production-ready multi-vendor e-commerce marketplace featuring separated Buyer, Vendor, and Admin portals, distinct MySQL schema architecture, WebNexa Escrow Vault payment workflows, and vendor onboarding management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
