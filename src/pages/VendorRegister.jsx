@@ -242,9 +242,10 @@ export const VendorRegister = () => {
                 <div className="space-y-1">
                   {MARKETPLACE_CATEGORIES.map((category) => {
                     const selected = formData.requested_categories.includes(category);
+                    const categoryLabel = category === "Food & Drinks" ? "Restaurants & Eateries" : category;
                     return <label key={category} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs leading-4 transition-colors ${selected ? "bg-purple-500/10 text-purple-200" : "text-zinc-300 hover:bg-zinc-800"}`}>
                       <input type="checkbox" checked={selected} onChange={() => toggleCategory(category)} className="h-4 w-4 shrink-0 accent-purple-600" />
-                      {category}
+                      {categoryLabel}
                     </label>;
                   })}
                 </div>
