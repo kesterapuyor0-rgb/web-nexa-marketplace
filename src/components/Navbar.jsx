@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { Logo } from "./Logo.jsx";
 import { MARKETPLACE_CATEGORIES } from "../config/categories.js";
+import { CATEGORY_ICONS } from "../config/categoryIcons.js";
 import {
   ShoppingBag,
   ChevronDown,
@@ -13,15 +14,8 @@ import {
   LogOut,
   User,
   Package,
-  Monitor,
-  Zap,
-  Wifi,
-  Sun,
-  Server,
-  Building,
   UserPlus,
-  LogIn,
-  Utensils
+  LogIn
 } from "lucide-react";
 import { SearchAutocomplete } from "./SearchAutocomplete.jsx";
 import { Wallet } from "lucide-react";
@@ -57,18 +51,11 @@ export const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  const categories = [
-    { name: "Food & Drinks", label: "Restaurants & Eateries", icon: Utensils },
-    { name: "Fresh farm products", label: "Fresh Farm Products", icon: Utensils },
-    { name: "Foodstuffs and provisions", label: "Foodstuffs & Provisions", icon: Utensils },
-    { name: "Cosmetics", label: "Cosmetics", icon: Utensils },
-    { name: "Computing", label: "Computing & IT", icon: Monitor },
-    { name: "Electronics", label: "Consumer Electronics", icon: Zap },
-    { name: "Networking & Optics", label: "Networking & Optics", icon: Wifi },
-    { name: "Solar & Power Solutions", label: "Solar & Clean Energy", icon: Sun },
-    { name: "Servers & Infrastructure", label: "Servers & Data Centers", icon: Server },
-    { name: "Home & Office", label: "Office & Enterprise Gear", icon: Building }
-  ].filter((category) => MARKETPLACE_CATEGORIES.includes(category.name));
+  const categories = MARKETPLACE_CATEGORIES.map((name) => ({
+    name,
+    label: name === "Food & Drinks" ? "Restaurants & Eateries" : name,
+    icon: CATEGORY_ICONS[name]
+  })).filter((category) => category.icon);
   const handleCategorySelect = (categoryName) => {
     setIsCategoryDropdownOpen(false);
     if (categoryName === "Food & Drinks") {

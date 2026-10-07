@@ -4,6 +4,7 @@ import { ProductDetailsModal } from "../components/ProductDetailsModal.jsx";
 import { Logo } from "../components/Logo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { MARKETPLACE_CATEGORIES } from "../config/categories.js";
+import { CATEGORY_ICONS } from "../config/categoryIcons.js";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
@@ -20,15 +21,8 @@ import {
   Store,
   Clock,
   Truck,
-  Zap,
-  Monitor,
-  Wifi,
-  Sun,
-  Server,
-  Building,
   BadgePercent,
-  Layers,
-  Utensils
+  Layers
 } from "lucide-react";
 export const MarketplaceHome = () => {
   const { token, role } = useAuth();
@@ -64,16 +58,10 @@ export const MarketplaceHome = () => {
   };
   const categories = [
     { name: "All", icon: Layers, count: "All" },
-    ...MARKETPLACE_CATEGORIES.filter((category) => category !== "Food & Drinks").map((name) => ({
-      name,
-      icon: name.includes("farm") || name.includes("provisions") || name.includes("Cosmetics") ? Utensils :
-        name.includes("Computing") || name.includes("Infrastructure") ? Monitor :
-          name.includes("Electronics") || name.includes("Phones") ? Zap :
-            name.includes("Networking") ? Wifi :
-              name.includes("Solar") ? Sun :
-                name.includes("Home") ? Building : Layers,
-      count: "Items"
-    }))
+    ...MARKETPLACE_CATEGORIES
+      .filter((name) => name !== "Food & Drinks")
+      .map((name) => ({ name, icon: CATEGORY_ICONS[name], count: "Items" }))
+      .filter((category) => category.icon)
   ];
   const promoSlides = [
     {
