@@ -93,6 +93,29 @@ function normalizeEmail(value) {
 function text(value) {
   return typeof value === "string" ? value.trim() : "";
 }
+function registrationError(role, body) {
+  const email = normalizeEmail(body.email);
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!email || password.length < 8) {
+    return "Enter a valid email and a password of at least 8 characters.";
+  }
+  if (role === "buyer" && !text(body.full_name)) {
+    return "Please provide your full name.";
+  }
+  if (role === "vendor") {
+    const required = [
+      "business_name",
+      "contact_person",
+      "company_registration_no",
+      "bank_name",
+      "bank_account_number"
+    ];
+    if (required.some((key) => !text(body[key]))) {
+      return "Complete the required business, registration, and bank details.";
+    }
+  }
+  return null;
+}
 function requestBody(req) {
   let body = req.body;
   if (body == null || body === "") return {};
@@ -123,18 +146,10 @@ function issueToken(account) {
 }
 async function createAccount(db, role, body, res) {
   const email = normalizeEmail(body.email);
-  const password = typeof body.password === "string" ? body.password : "";
-  if (!email || password.length < 8) {
-    res.status(400).json({ error: "Enter a valid email and a password of at least 8 characters." });
-    return;
-  }
+  const password = body.password;
   let fields;
   if (role === "buyer") {
     const fullName = text(body.full_name);
-    if (!fullName) {
-      res.status(400).json({ error: "Please provide your full name." });
-      return;
-    }
     fields = {
       full_name: fullName,
       phone: text(body.phone),
@@ -146,17 +161,6 @@ async function createAccount(db, role, body, res) {
       postal_code: text(body.postal_code)
     };
   } else {
-    const required = [
-      "business_name",
-      "contact_person",
-      "company_registration_no",
-      "bank_name",
-      "bank_account_number"
-    ];
-    if (required.some((key) => !text(body[key]))) {
-      res.status(400).json({ error: "Complete the required business, registration, and bank details." });
-      return;
-    }
     fields = {
       business_name: text(body.business_name),
       contact_person: text(body.contact_person),
@@ -299,16 +303,23 @@ async function handleMongoAuth(req, res, role, operation) {
       res.status(400).json({ error: "Email and password are required." });
       return;
     }
+    if (operation === "register") {
+      if (role === "admin") {
+        res.status(405).json({ error: "Administrator registration is disabled." });
+        return;
+      }
+      const validationError = registrationError(role, body);
+      if (validationError) {
+        res.status(400).json({ error: validationError });
+        return;
+      }
+    }
     const db = await getDatabase();
     if (operation === "me") {
       await currentAccount(db, role, req, res);
       return;
     }
     if (operation === "register") {
-      if (role === "admin") {
-        res.status(405).json({ error: "Administrator registration is disabled." });
-        return;
-      }
       await createAccount(db, role, body, res);
       return;
     }
