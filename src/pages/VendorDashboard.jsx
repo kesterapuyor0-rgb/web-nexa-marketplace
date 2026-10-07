@@ -8,7 +8,6 @@ import {
   Clock,
   Plus,
   Package,
-  Wallet,
   Truck,
   AlertCircle,
   X,
@@ -220,7 +219,6 @@ export const VendorDashboard = () => {
               </label>
               {logoError && <p className="mt-1 text-xs text-red-300">{logoError}</p>}
             </div>
-            <WalletPanel token={token} role="vendor" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold text-white font-cinzel">
@@ -288,21 +286,12 @@ export const VendorDashboard = () => {
           </div>}
       </div>
 
+      <WalletPanel token={token} role="vendor" vendor={vendor} />
+
       {
     /* Metrics Row */
   }
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-[#18181e] border border-zinc-800">
-          <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
-            <span>Settled Payout Wallet</span>
-            <Wallet className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="text-2xl font-bold font-mono text-emerald-400">
-            ₦{(vendor?.wallet_balance || 0).toLocaleString()}
-          </div>
-          <p className="text-[11px] text-zinc-500 mt-1">Available for bank wire disbursement</p>
-        </div>
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="p-5 rounded-2xl bg-[#18181e] border border-zinc-800">
           <div className="flex items-center justify-between text-zinc-400 text-xs mb-2">
             <span>Pending Platform Settlement</span>
