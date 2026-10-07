@@ -163,7 +163,7 @@ export const MarketplaceHome = () => {
           {
     /* Left: WebNexa brand and buyer protection trust widget */
   }
-          <aside className="lg:col-span-3 bg-[#18181e] border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between min-h-[340px]">
+          <aside className="lg:col-span-3 bg-[#18181e] border border-zinc-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between min-h-0 lg:min-h-[340px]">
             <div className="space-y-4">
               <div className="flex flex-col items-center text-center gap-2 pb-4 border-b border-zinc-800">
                 <Logo size="xl" showText={false} className="justify-center" />

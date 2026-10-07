@@ -135,7 +135,7 @@ export const Navbar = () => {
     /* 1. BRAND LOGO */
   }
         <div className="flex items-center shrink-0">
-          <Logo size="md" onClick={() => navigate("/")} />
+          <Logo size="md" className="navbar-logo" onClick={() => navigate("/")} />
         </div>
 
         {
@@ -357,10 +357,11 @@ export const Navbar = () => {
                 <Link
       id="navbar-login-link"
       to="/login"
-      className="h-10 px-3.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                  aria-label="Log in"
+                  className="h-10 px-2 sm:px-3.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 text-xs font-semibold transition-colors flex items-center gap-1.5"
     >
                   <LogIn className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Login</span>
+                  <span className="hidden sm:inline">Login</span>
                 </Link>
 
                 <div className="relative">
@@ -368,10 +369,12 @@ export const Navbar = () => {
       id="navbar-register-menu-btn"
       type="button"
       onClick={() => setIsAuthMenuOpen(!isAuthMenuOpen)}
-      className="h-10 px-3.5 rounded-xl cta-gradient text-white text-xs font-bold shadow flex items-center gap-1.5 hover:opacity-95 transition-opacity"
+      aria-label="Register an account"
+      className="h-10 px-2 sm:px-3.5 rounded-xl cta-gradient text-white text-xs font-bold shadow flex items-center gap-1.5 hover:opacity-95 transition-opacity"
     >
-                    <span>Register</span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-white/80 transition-transform ${isAuthMenuOpen ? "rotate-180" : ""}`} />
+                    <UserPlus className="w-3.5 h-3.5 sm:hidden" />
+                    <span className="hidden sm:inline">Register</span>
+                    <ChevronDown className={`hidden sm:block w-3.5 h-3.5 text-white/80 transition-transform ${isAuthMenuOpen ? "rotate-180" : ""}`} />
                   </button>
 
                   {isAuthMenuOpen && <div className="absolute right-0 top-full mt-2 w-56 bg-[#18181e] border border-zinc-700/80 rounded-2xl p-2 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -419,5 +422,19 @@ export const Navbar = () => {
     placeholder="Search verified gear, brands..."
   />
       </div>
+      <nav aria-label="Browse categories" className="mobile-category-nav sm:hidden flex gap-2 overflow-x-auto px-4 pb-3">
+        {categories.map((category) => {
+    const Icon = category.icon;
+    return <button
+      key={category.name}
+      type="button"
+      onClick={() => handleCategorySelect(category.name)}
+      className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 px-3 text-[11px] font-medium text-zinc-300 active:bg-zinc-800"
+    >
+            <Icon className="h-3.5 w-3.5 text-purple-300" />
+            <span>{category.name}</span>
+          </button>;
+  })}
+      </nav>
     </header>;
 };

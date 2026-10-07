@@ -153,9 +153,9 @@ export default function FoodDelivery() {
         <section className="mt-5 rounded-3xl border border-zinc-800 bg-zinc-900/60 p-5">
           <h2 className="font-bold">Delivery contact confirmation</h2>
           <p className="mt-1 text-xs text-zinc-400">Confirm where the courier should deliver and the number used for arrival updates.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
             <input value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-sm text-white outline-none focus:border-purple-500" />
-            <PhoneInput value={deliveryPhone} onChange={setDeliveryPhone} label="Courier contact number" />
+            <PhoneInput value={deliveryPhone} onChange={setDeliveryPhone} label="Courier contact number" className="min-w-0" />
           </div>
           <button type="button" onClick={() => setContactConfirmed(true)} disabled={!deliveryAddress || !deliveryPhone} className="mt-3 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold disabled:opacity-50">{contactConfirmed ? "Delivery details confirmed" : "Confirm delivery details"}</button>
         </section>

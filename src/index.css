@@ -236,6 +236,29 @@
 }
 
 @media (max-width: 480px) {
+  .navbar-logo {
+    gap: 0.45rem;
+  }
+
+  .navbar-logo > div:nth-child(2) > div > span:last-child,
+  .navbar-logo > div:nth-child(2) > span {
+    display: none;
+  }
+
+  .navbar-logo > div:nth-child(2) > div > span:first-child {
+    font-size: 1rem;
+  }
+
+  .mobile-category-nav {
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-category-nav::-webkit-scrollbar {
+    display: none;
+  }
+
   .auth-page {
     padding: 0;
   }
