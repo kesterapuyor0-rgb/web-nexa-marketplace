@@ -9,7 +9,7 @@ import {
 
 test("normalizes legacy products without discarding unknown fields", () => {
   const product = normalizeLegacyProduct({
-    id: "legacy-product",
+    _id: "legacy-product",
     vendor_id: "legacy-vendor",
     old_field: "preserved",
     price: "not-a-number",
@@ -32,13 +32,14 @@ test("normalizes legacy products without discarding unknown fields", () => {
 
 test("normalizes legacy vendor fields and preserves optional metadata", () => {
   const vendor = normalizeLegacyVendor({
-    id: "legacy-vendor",
+    _id: "legacy-vendor",
     business_name: "  Legacy Store  ",
     requested_categories: ["Food", "Fashion"],
     is_approved: false
   });
 
   assert.equal(vendor.business_name, "Legacy Store");
+  assert.equal(vendor.id, "legacy-vendor");
   assert.equal(vendor.country, "Nigeria");
   assert.equal(vendor.is_approved, false);
   assert.deepEqual(vendor.requested_categories, ["Food", "Fashion"]);
@@ -46,12 +47,13 @@ test("normalizes legacy vendor fields and preserves optional metadata", () => {
 
 test("normalizes legacy buyers without overwriting unknown fields", () => {
   const buyer = normalizeLegacyBuyer({
-    id: "legacy-buyer",
+    _id: "legacy-buyer",
     city: null,
     legacy_preference: "kept"
   });
 
   assert.equal(buyer.full_name, "Buyer");
+  assert.equal(buyer.id, "legacy-buyer");
   assert.equal(buyer.city, "");
   assert.equal(buyer.country, "Nigeria");
   assert.equal(buyer.legacy_preference, "kept");
@@ -59,13 +61,14 @@ test("normalizes legacy buyers without overwriting unknown fields", () => {
 
 test("normalizes legacy orders with missing items and address fields", () => {
   const order = normalizeLegacyOrder({
-    id: "legacy-order",
+    _id: "legacy-order",
     total_amount: "",
     shipping_address: "Old street address",
     legacy_status: "kept"
   });
 
   assert.equal(order.total_amount, 0);
+  assert.equal(order.id, "legacy-order");
   assert.deepEqual(order.items, []);
   assert.equal(order.shipping_address.address_line1, "Old street address");
   assert.equal(order.shipping_address.country, "Nigeria");

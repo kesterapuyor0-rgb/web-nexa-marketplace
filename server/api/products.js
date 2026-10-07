@@ -1,7 +1,7 @@
 import { getBuyerForRequest, getDatabase } from "./_mongoAuth.js";
-import { store } from "../../server/store.js";
 import { filterProductsByBuyerLocation } from "../../server/utils/productLocation.js";
 import { normalizeLegacyBuyer, normalizeLegacyProduct } from "../../server/utils/legacyData.js";
+import { mongoIdFilters } from "../../server/utils/mongoId.js";
 
 function normalizeProduct(product, vendor) {
   const normalizedProduct = normalizeLegacyProduct(product);
@@ -46,32 +46,18 @@ export default async function handler(req, res) {
       is_approved_by_admin: { $ne: false }
     }).sort({ created_at: -1 }).limit(500).toArray();
 
-    let products;
-    let vendors = new Map();
-    let source;
-    if (storedProducts.length) {
-      const vendorIds = [...new Set(storedProducts.map((product) => String(product.vendor_id || "")).filter(Boolean))];
-      const vendorAccounts = vendorIds.length ? await db.collection("accounts").find({
-        role: "vendor",
-        $or: [{ id: { $in: vendorIds } }, { _id: { $in: vendorIds } }]
-      }).project({ id: 1, business_name: 1, city: 1, state: 1, country: 1, location: 1, is_approved: 1 }).toArray() : [];
-      vendors = new Map(vendorAccounts.map((vendor) => [String(vendor.id || vendor._id), vendor]));
-      products = storedProducts.flatMap((product) => {
-        const vendor = vendors.get(String(product.vendor_id || "")) || product.vendor;
-        if (!product.vendor_id || vendor?.is_approved === false) return [];
-        const normalizedProduct = normalizeProduct(product, vendor);
-        return normalizedProduct ? [normalizedProduct] : [];
-      });
-      source = "database";
-    } else {
-      const seededVendors = new Map((Array.isArray(store.vendors) ? store.vendors : [])
-        .filter((vendor) => vendor && vendor.id)
-        .map((vendor) => [vendor.id, vendor]));
-      products = (Array.isArray(store.products) ? store.products : [])
-        .map((product) => normalizeProduct(product, seededVendors.get(product?.vendor_id)))
-        .filter((product) => product && product.is_active && product.is_approved_by_admin);
-      source = "fallback";
-    }
+    const vendorIds = [...new Set(storedProducts.map((product) => String(product.vendor_id || "")).filter(Boolean))];
+    const vendorAccounts = vendorIds.length ? await db.collection("accounts").find({
+      role: "vendor",
+      $or: vendorIds.flatMap(mongoIdFilters)
+    }).project({ id: 1, business_name: 1, city: 1, state: 1, country: 1, location: 1, is_approved: 1 }).toArray() : [];
+    const vendors = new Map(vendorAccounts.map((vendor) => [String(vendor.id || vendor._id), vendor]));
+    const products = storedProducts.flatMap((product) => {
+      const vendor = vendors.get(String(product.vendor_id || "")) || product.vendor;
+      if (!product.vendor_id || vendor?.is_approved === false) return [];
+      const normalizedProduct = normalizeProduct(product, vendor);
+      return normalizedProduct ? [normalizedProduct] : [];
+    });
 
     const locationFiltered = filterProductsByBuyerLocation(products, buyer, (product) =>
       vendors.get(String(product.vendor_id)) || product.vendor || product.vendor_location
@@ -83,7 +69,7 @@ export default async function handler(req, res) {
         ...locationFiltered.location,
         buyer: buyer ? { city: buyer.city || "", state: buyer.state || "", country: buyer.country || "" } : null
       },
-      source
+      source: "database"
     });
   } catch (error) {
     console.error("[products] Catalog query failed", {

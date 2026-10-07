@@ -20,10 +20,14 @@ export function normalizeVendorCategories(categories) {
     incoming = categories;
   } else if (typeof categories === "string") {
     try {
-      incoming = JSON.parse(categories);
+      const parsed = JSON.parse(categories);
+      incoming = Array.isArray(parsed) ? parsed : [];
     } catch {
       incoming = [];
     }
   }
-  return [...new Set(incoming.map((category) => String(category).trim()).filter((category) => VALID_VENDOR_CATEGORIES.has(category)))];
+  return [...new Set(incoming
+    .filter((category) => typeof category === "string")
+    .map((category) => category.trim())
+    .filter((category) => VALID_VENDOR_CATEGORIES.has(category)))];
 }

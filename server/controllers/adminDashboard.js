@@ -1,13 +1,46 @@
 import { store } from "../store.js";
+import { getDatabase } from "../api/_mongoAuth.js";
+import { normalizeLegacyProduct, normalizeLegacyVendor } from "../utils/legacyData.js";
+import { mongoIdFilters } from "../utils/mongoId.js";
+
+function sendDatabaseError(res, operation, error) {
+  console.error(`[admin] ${operation} failed`, {
+    message: error instanceof Error ? error.message : String(error),
+    code: error?.code
+  });
+  res.status(503).json({ error: "Marketplace data is temporarily unavailable. Please try again." });
+}
+
+function vendorQuery(id) {
+  return { role: "vendor", $or: mongoIdFilters(id) };
+}
+
+function productQuery(id) {
+  return { $or: [...mongoIdFilters(id), { slug: id }] };
+}
+
+function safeVendor(vendor) {
+  const normalized = normalizeLegacyVendor(vendor);
+  if (!normalized) return null;
+  const { password_hash: _passwordHash, ...safeRecord } = normalized;
+  return safeRecord;
+}
+
 export async function getAdminDashboardStats(req, res) {
   try {
-    const totalBuyers = store.buyers.length;
-    const totalVendors = store.vendors.length;
-    const approvedVendors = store.vendors.filter((v) => v.is_approved).length;
-    const pendingVendors = store.vendors.filter((v) => !v.is_approved && !v.rejection_reason).length;
-    const rejectedVendors = store.vendors.filter((v) => !v.is_approved && v.rejection_reason).length;
-    const totalProducts = store.products.length;
-    const activeProducts = store.products.filter((p) => p.is_active).length;
+    const db = await getDatabase();
+    const accounts = db.collection("accounts");
+    const products = db.collection("products");
+    const [totalBuyers, vendorRecords, totalProducts, activeProducts] = await Promise.all([
+      accounts.countDocuments({ role: "buyer" }),
+      accounts.find({ role: "vendor" }).project({ is_approved: 1, rejection_reason: 1 }).toArray(),
+      products.countDocuments(),
+      products.countDocuments({ is_active: true })
+    ]);
+    const totalVendors = vendorRecords.length;
+    const approvedVendors = vendorRecords.filter((vendor) => vendor.is_approved === true).length;
+    const pendingVendors = vendorRecords.filter((vendor) => vendor.is_approved !== true && !vendor.rejection_reason).length;
+    const rejectedVendors = vendorRecords.filter((vendor) => vendor.is_approved !== true && vendor.rejection_reason).length;
     let totalEscrowHeld = 0;
     let totalEscrowReleased = 0;
     let totalGmv = 0;
@@ -35,68 +68,88 @@ export async function getAdminDashboardStats(req, res) {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: "Failed to aggregate admin statistics: " + err.message });
+    sendDatabaseError(res, "Dashboard query", err);
   }
 }
 export async function getAllVendors(req, res) {
   try {
+    const db = await getDatabase();
     const { status } = req.query;
-    let vendors = store.vendors;
+    let vendors = await db.collection("accounts").find({ role: "vendor" }).sort({ created_at: -1 }).toArray();
     if (status === "pending") {
-      vendors = vendors.filter((v) => !v.is_approved && !v.rejection_reason);
+      vendors = vendors.filter((vendor) => vendor.is_approved !== true && !vendor.rejection_reason);
     } else if (status === "approved") {
-      vendors = vendors.filter((v) => v.is_approved);
+      vendors = vendors.filter((vendor) => vendor.is_approved === true);
     } else if (status === "rejected") {
-      vendors = vendors.filter((v) => !v.is_approved && v.rejection_reason);
+      vendors = vendors.filter((vendor) => vendor.is_approved !== true && vendor.rejection_reason);
     }
-    const safeVendors = vendors.map(({ password_hash: _, ...v }) => v);
+    const safeVendors = vendors.map(safeVendor).filter(Boolean);
     res.json({ vendors: safeVendors });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch vendor records: " + err.message });
+    sendDatabaseError(res, "Vendor list query", err);
   }
 }
 export async function approveVendor(req, res) {
   try {
+    const db = await getDatabase();
     const admin = req.admin;
     const { id } = req.params;
-    const vendor = store.vendors.find((v) => v.id === id);
+    const result = await db.collection("accounts").findOneAndUpdate(
+      vendorQuery(id),
+      {
+        $set: {
+          is_approved: true,
+          rejection_reason: null,
+          approved_at: new Date().toISOString(),
+          approved_by_admin_id: admin?.id || admin?._id || "",
+          updated_at: new Date().toISOString()
+        }
+      },
+      { returnDocument: "after", projection: { password_hash: 0 } }
+    );
+    const vendor = result?.value || result;
     if (!vendor) {
       res.status(404).json({ error: "Vendor not found in database." });
       return;
     }
-    vendor.is_approved = true;
-    vendor.rejection_reason = null;
-    vendor.approved_at = (/* @__PURE__ */ new Date()).toISOString();
-    vendor.approved_by_admin_id = admin.id;
-    vendor.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    const { password_hash: _, ...safeVendor } = vendor;
+    const vendorRecord = safeVendor(vendor);
     res.json({
       message: `Vendor '${vendor.business_name}' approved successfully! They are now authorized to list products on WebNexa.`,
-      vendor: safeVendor
+      vendor: vendorRecord
     });
   } catch (err) {
-    res.status(500).json({ error: "Vendor approval failed: " + err.message });
+    sendDatabaseError(res, "Vendor approval", err);
   }
 }
 export async function rejectVendor(req, res) {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
-    const { reason } = req.body;
-    const vendor = store.vendors.find((v) => v.id === id);
+    const reason = typeof req.body?.reason === "string" && req.body.reason.trim()
+      ? req.body.reason.trim()
+      : "Documentation failed compliance and verification standards.";
+    const result = await db.collection("accounts").findOneAndUpdate(
+      vendorQuery(id),
+      {
+        $set: {
+          is_approved: false,
+          rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        }
+      },
+      { returnDocument: "after", projection: { password_hash: 0 } }
+    );
+    const vendor = result?.value || result;
     if (!vendor) {
       res.status(404).json({ error: "Vendor not found in database." });
       return;
     }
-    vendor.is_approved = false;
-    vendor.rejection_reason = reason || "Documentation failed compliance and verification standards.";
-    vendor.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    const { password_hash: _, ...safeVendor } = vendor;
     res.json({
       message: `Vendor application for '${vendor.business_name}' rejected.`,
-      vendor: safeVendor
+      vendor: safeVendor(vendor)
     });
   } catch (err) {
-    res.status(500).json({ error: "Vendor rejection failed: " + err.message });
+    sendDatabaseError(res, "Vendor rejection", err);
   }
 }
 export async function getAllEscrowTransactions(req, res) {
@@ -115,25 +168,31 @@ export async function getAllOrders(req, res) {
 }
 export async function getAllAdminProducts(req, res) {
   try {
-    res.json({ products: store.products });
+    const db = await getDatabase();
+    const products = await db.collection("products").find({}).sort({ created_at: -1 }).limit(500).toArray();
+    res.json({ products: products.map(normalizeLegacyProduct).filter(Boolean) });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch products: " + err.message });
+    sendDatabaseError(res, "Product list query", err);
   }
 }
 export async function approveProduct(req, res) {
   try {
+    const db = await getDatabase();
     const { id } = req.params;
-    const product = store.products.find((p) => p.id === id);
+    const result = await db.collection("products").findOneAndUpdate(
+      productQuery(id),
+      { $set: { is_approved_by_admin: true, is_active: true, updated_at: new Date().toISOString() } },
+      { returnDocument: "after" }
+    );
+    const product = result?.value || result;
     if (!product) {
       res.status(404).json({ error: "Product not found." });
       return;
     }
-    product.is_approved_by_admin = true;
-    product.is_active = true;
-    product.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    res.json({ message: `Product "${product.title}" approved and published to marketplace catalog.`, product });
+    const normalizedProduct = normalizeLegacyProduct(product);
+    res.json({ message: `Product "${normalizedProduct?.title || "Product"}" approved and published to marketplace catalog.`, product: normalizedProduct });
   } catch (err) {
-    res.status(500).json({ error: "Failed to approve product: " + err.message });
+    sendDatabaseError(res, "Product approval", err);
   }
 }
 export async function toggleAutoReleaseEscrow(req, res) {

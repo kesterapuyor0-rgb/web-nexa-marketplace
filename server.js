@@ -7,16 +7,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { createApp } from "./server/app.js";
-import { initializeMysqlDatabase, synchronizeAuthRecordsToMysql } from "./server/database/mysqlPersistence.js";
-import { store } from "./server/store.js";
 
 export const app = createApp();
 
 async function startServer() {
-  const mysqlReady = await initializeMysqlDatabase();
-  if (mysqlReady) {
-    await synchronizeAuthRecordsToMysql(store.buyers, store.vendors, store.admins);
-  }
   const PORT = Number(process.env.PORT) || 5000;
   const httpServer = createServer(app);
   const io = new SocketServer(httpServer, { cors: { origin: true, credentials: true } });

@@ -7,7 +7,7 @@ Existing users, records, and integrations must remain readable and usable after 
 ## Required behavior
 
 - Preserve unknown legacy fields when a record is read, updated, or persisted.
-- Treat every newly introduced MongoDB or Sequelize field as optional or give it a safe default. Do not make an existing record invalid because it predates a field.
+- Treat every newly introduced persisted field as optional or give it a safe default. Do not make an existing record invalid because it predates a field.
 - Enforce new-field requirements at the new-write API boundary when they are a business rule; do not add a database `required` constraint that blocks old records without a reviewed migration and backfill.
 - Use safe defaults for missing values; do not replace stored legacy values with defaults.
 - Treat malformed optional values as empty or zero only when the current consumer cannot safely use them.

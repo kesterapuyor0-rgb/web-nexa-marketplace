@@ -7,6 +7,8 @@ import {
   MongoServerError,
   ServerApiVersion
 } from "mongodb";
+import { normalizeVendorCategories } from "../utils/vendorCategories.js";
+import { mongoIdFilters } from "../utils/mongoId.js";
 const globalMongo = globalThis;
 export async function getDatabase() {
   const uri = process.env.MONGODB_URI;
@@ -63,7 +65,7 @@ export async function getAccountForRequest(req, db, role) {
     return null;
   }
   if (decoded.role !== role) return null;
-  return db.collection("accounts").findOne({ role, $or: [{ _id: decoded.id }, { id: decoded.id }] });
+  return db.collection("accounts").findOne({ role, $or: mongoIdFilters(decoded.id) });
 }
 export async function getBuyerForRequest(req, db) {
   return getAccountForRequest(req, db, "buyer");
@@ -77,7 +79,7 @@ function jwtSecret() {
 }
 function publicAccount(account) {
   const { password_hash: _passwordHash, ...safeAccount } = account;
-  return safeAccount;
+  return { ...safeAccount, id: String(account.id || account._id || "") };
 }
 function redactMongoUri(value) {
   let message = String(value);
@@ -137,6 +139,9 @@ function registrationError(role, body) {
     if (required.some((key) => !text(body[key]))) {
       return "Complete the required business, registration, and bank details.";
     }
+    if (normalizeVendorCategories(body.requested_categories).length === 0) {
+      return "Select at least one marketplace category for your business.";
+    }
   }
   return null;
 }
@@ -163,7 +168,7 @@ function requestBody(req) {
 }
 function issueToken(account) {
   return jwt.sign(
-    { id: account.id, email: account.email, role: account.role },
+    { id: String(account.id || account._id || ""), email: account.email, role: account.role },
     jwtSecret(),
     { expiresIn: "7d" }
   );
@@ -209,6 +214,7 @@ async function createAccount(db, role, body, res) {
       wallet_balance: 0,
       escrow_pending_balance: 0,
       business_category: body.business_category === "RESTAURANT_FOOD" ? "RESTAURANT_FOOD" : "GENERAL",
+      requested_categories: normalizeVendorCategories(body.requested_categories),
       restaurant_business_type: text(body.restaurant_business_type),
       operating_hours: text(body.operating_hours),
       delivery_radius_km: Number(body.delivery_radius_km) || 10,
@@ -317,12 +323,72 @@ async function currentAccount(db, role, req, res) {
     res.status(401).json({ error: "Invalid or expired session token." });
     return;
   }
-  const account = await db.collection("accounts").findOne({ _id: decoded.id, role });
+  const account = await db.collection("accounts").findOne({ role, $or: mongoIdFilters(decoded.id) });
   if (!account) {
     res.status(401).json({ error: "Invalid or expired session token." });
     return;
   }
   res.json({ [role]: publicAccount(account), role });
+}
+async function updateCurrentAccount(db, role, req, body, res) {
+  const authorization = req.headers.authorization;
+  if (!authorization?.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Authentication required." });
+    return;
+  }
+  let decoded;
+  try {
+    decoded = jwt.verify(authorization.slice(7), jwtSecret());
+  } catch {
+    res.status(401).json({ error: "Invalid or expired session token." });
+    return;
+  }
+  if (decoded.role !== role) {
+    res.status(401).json({ error: "Invalid or expired session token." });
+    return;
+  }
+  const accounts = db.collection("accounts");
+  const account = await accounts.findOne({ role, $or: mongoIdFilters(decoded.id) });
+  if (!account) {
+    res.status(401).json({ error: "Invalid or expired session token." });
+    return;
+  }
+  const fields = role === "buyer"
+    ? ["full_name", "phone", "shipping_address_line1", "shipping_address_line2", "city", "state", "country", "postal_code"]
+    : ["store_logo_url"];
+  const updates = Object.fromEntries(fields
+    .filter((field) => typeof body[field] === "string")
+    .map((field) => [field, text(body[field])]));
+  if (role === "buyer" && updates.full_name !== undefined && !updates.full_name) {
+    res.status(400).json({ error: "Full name cannot be empty." });
+    return;
+  }
+  if (role === "vendor" && updates.store_logo_url !== undefined) {
+    if (!/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/=\s]+$/.test(updates.store_logo_url)) {
+      res.status(400).json({ error: "Please upload a valid JPEG, PNG, WEBP, or GIF logo." });
+      return;
+    }
+    if (updates.store_logo_url.length > 7 * 1024 * 1024) {
+      res.status(413).json({ error: "Logo files must be 5 MB or smaller." });
+      return;
+    }
+  }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "No valid profile fields were provided." });
+    return;
+  }
+  updates.updated_at = (/* @__PURE__ */ new Date()).toISOString();
+  const result = await accounts.findOneAndUpdate(
+    { role, $or: mongoIdFilters(decoded.id) },
+    { $set: updates },
+    { returnDocument: "after", projection: { password_hash: 0 } }
+  );
+  const updatedAccount = result?.value || result;
+  res.json({
+    message: "Profile updated successfully.",
+    [role]: updatedAccount,
+    role
+  });
 }
 async function handleMongoAuth(req, res, role, operation) {
   try {
@@ -346,6 +412,10 @@ async function handleMongoAuth(req, res, role, operation) {
     const db = await getDatabase();
     if (operation === "me") {
       await currentAccount(db, role, req, res);
+      return;
+    }
+    if (operation === "update") {
+      await updateCurrentAccount(db, role, req, body, res);
       return;
     }
     if (operation === "register") {

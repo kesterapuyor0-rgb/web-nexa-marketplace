@@ -224,7 +224,7 @@ export const AdminDashboard = () => {
               </div>
               <p className="text-xs text-zinc-400 mt-1">
                 Signed in as: <span className="text-zinc-200 font-semibold">{admin?.name}</span> ({admin?.email}) •
-                Strict MySQL Table Separation Enforcement
+                MongoDB-backed marketplace administration
               </p>
             </div>
           </div>
@@ -335,7 +335,7 @@ export const AdminDashboard = () => {
     className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center gap-2 ${activeTab === "architecture" ? "bg-purple-900/40 text-purple-200 border border-purple-500/30" : "text-zinc-400 hover:text-white"}`}
   >
           <Database className="w-4 h-4" />
-          <span>MySQL Schema & Sequelize Models</span>
+          <span>MongoDB Collections & Architecture</span>
         </button>
 
         <button
@@ -752,160 +752,74 @@ export const AdminDashboard = () => {
         </div>}
 
       {
-    /* Tab 4: MySQL Schema & Architecture Inspector */
+    /* Tab 4: MongoDB Collections & Architecture */
   }
       {activeTab === "architecture" && <div className="space-y-6">
           <div className="bg-[#18181e] border border-zinc-800 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-white font-cinzel">
-                  MySQL Relational Architecture (Strict Table Separation)
+                  MongoDB Document Collections
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Normalized MySQL DDL demonstrating separate <code className="text-purple-400">buyers</code> and{" "}
-                  <code className="text-purple-400">vendors</code> tables with foreign keys.
+                  Marketplace accounts, products, orders, reviews, and payment records are stored in MongoDB collections.
                 </p>
               </div>
               <button
-    onClick={() => handleCopy(`-- WebNexa MySQL DDL
-CREATE TABLE buyers (
-  id VARCHAR(36) PRIMARY KEY,
-  full_name VARCHAR(120) NOT NULL,
-  email VARCHAR(120) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  phone VARCHAR(30) NULL,
-  shipping_address_line1 VARCHAR(255) NULL,
-  city VARCHAR(80) NULL,
-  state VARCHAR(80) NULL,
-  country VARCHAR(60) NOT NULL DEFAULT 'Nigeria',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE vendors (
-  id VARCHAR(36) PRIMARY KEY,
-  business_name VARCHAR(160) NOT NULL,
-  contact_person VARCHAR(120) NOT NULL,
-  email VARCHAR(120) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  phone VARCHAR(30) NOT NULL,
-  company_registration_no VARCHAR(80) NOT NULL UNIQUE,
-  bank_name VARCHAR(100) NOT NULL,
-  bank_account_number VARCHAR(30) NOT NULL,
-  bank_account_name VARCHAR(150) NOT NULL,
-  is_approved BOOLEAN NOT NULL DEFAULT FALSE,
-  wallet_balance DECIMAL(15,2) NOT NULL DEFAULT 0.00
-);`)}
+    onClick={() => handleCopy(JSON.stringify({
+      accounts: ["buyer", "vendor", "admin"],
+      products: ["vendor_id", "title", "category", "price", "inventory_count"],
+      orders: ["buyer_id", "items", "shipping_address", "status"],
+      vendor_reviews: ["vendor_id", "buyer_id", "order_id", "rating"]
+    }, null, 2))}
     className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold flex items-center gap-1.5"
   >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? "Copied" : "Copy DDL Snippet"}</span>
+                <span>{copied ? "Copied" : "Copy collection example"}</span>
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-2">
-                <span className="font-bold text-emerald-400 font-mono block">TABLE: `buyers`</span>
+                <span className="font-bold text-emerald-400 font-mono block">COLLECTION: `accounts`</span>
                 <p className="text-zinc-400 text-[11px]">
-                  Holds retail consumer credentials, shipping addresses, phone numbers, and profile timestamps. Completely isolated from vendor payouts.
+                  Stores buyer, vendor, and administrator account documents with role-specific fields.
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-2">
-                <span className="font-bold text-purple-400 font-mono block">TABLE: `vendors`</span>
+                <span className="font-bold text-purple-400 font-mono block">COLLECTION: `products`</span>
                 <p className="text-zinc-400 text-[11px]">
-                  Holds merchant legal corporate registration (CAC/RC), settlement bank details, verification flags (<code className="text-amber-300">is_approved</code>), and wallet ledger balances.
+                  Stores catalog items, inventory, pricing, category, vendor ownership, and publication status.
                 </p>
               </div>
 
               <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-2">
-                <span className="font-bold text-red-400 font-mono block">TABLE: `admins`</span>
+                <span className="font-bold text-red-400 font-mono block">COLLECTION: `orders`</span>
                 <p className="text-zinc-400 text-[11px]">
-                  Executive compliance credentials, audit trails, and role designations (SUPER_ADMIN, ESCROW_OFFICER).
+                  Stores checkout snapshots, delivery details, escrow state, and item/vendor splits.
                 </p>
               </div>
             </div>
 
             {
-    /* SQL Code Block */
+    /* MongoDB document example */
   }
             <div className="bg-[#111114] border border-zinc-800 rounded-xl p-4 overflow-x-auto text-[11px] font-mono text-zinc-300 max-h-80">
-              <pre>{`-- WebNexa Multi-Vendor Relational Schema
--- Located at /server/database/schema.sql
-
-CREATE TABLE admins (
-  id VARCHAR(36) PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(120) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  privilege_level ENUM('SUPER_ADMIN', 'ESCROW_OFFICER', 'COMPLIANCE_MANAGER') DEFAULT 'SUPER_ADMIN',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE buyers (
-  id VARCHAR(36) PRIMARY KEY,
-  full_name VARCHAR(120) NOT NULL,
-  email VARCHAR(120) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  phone VARCHAR(30) NULL,
-  shipping_address_line1 VARCHAR(255) NULL,
-  city VARCHAR(80) NULL,
-  state VARCHAR(80) NULL,
-  country VARCHAR(60) NOT NULL DEFAULT 'Nigeria',
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE vendors (
-  id VARCHAR(36) PRIMARY KEY,
-  business_name VARCHAR(160) NOT NULL,
-  contact_person VARCHAR(120) NOT NULL,
-  email VARCHAR(120) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  phone VARCHAR(30) NOT NULL,
-  company_registration_no VARCHAR(80) NOT NULL UNIQUE, -- CAC / RC Number
-  bank_name VARCHAR(100) NOT NULL,
-  bank_account_number VARCHAR(30) NOT NULL,
-  bank_account_name VARCHAR(150) NOT NULL,
-  bank_code VARCHAR(20) NOT NULL DEFAULT '057',
-  is_approved BOOLEAN NOT NULL DEFAULT FALSE,
-  rejection_reason TEXT NULL,
-  approved_by_admin_id VARCHAR(36) NULL,
-  wallet_balance DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (approved_by_admin_id) REFERENCES admins(id)
-);
-
-CREATE TABLE products (
-  id VARCHAR(36) PRIMARY KEY,
-  vendor_id VARCHAR(36) NOT NULL,
-  title VARCHAR(200) NOT NULL,
-  price DECIMAL(15, 2) NOT NULL,
-  inventory_count INT NOT NULL DEFAULT 0,
-  category VARCHAR(80) NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE
-);
-
-CREATE TABLE orders (
-  id VARCHAR(36) PRIMARY KEY,
-  order_number VARCHAR(60) NOT NULL UNIQUE,
-  buyer_id VARCHAR(36) NOT NULL,
-  vendor_id VARCHAR(36) NOT NULL,
-  total_amount DECIMAL(15, 2) NOT NULL,
-  escrow_fee DECIMAL(15, 2) NOT NULL,
-  vendor_payout_amount DECIMAL(15, 2) NOT NULL,
-  status ENUM('PENDING_PAYMENT', 'HELD_IN_ESCROW', 'SHIPPED', 'DELIVERED', 'ESCROW_RELEASED') NOT NULL,
-  FOREIGN KEY (buyer_id) REFERENCES buyers(id),
-  FOREIGN KEY (vendor_id) REFERENCES vendors(id)
-);
-
-CREATE TABLE escrow_transactions (
-  id VARCHAR(36) PRIMARY KEY,
-  order_id VARCHAR(36) NOT NULL UNIQUE,
-  paystack_reference VARCHAR(120) NOT NULL UNIQUE,
-  amount DECIMAL(15, 2) NOT NULL,
-  escrow_status ENUM('HOLDING', 'RELEASED_TO_VENDOR', 'REFUNDED_TO_BUYER') NOT NULL,
-  FOREIGN KEY (order_id) REFERENCES orders(id)
-);`}</pre>
+              <pre>{`{
+  "accounts": {
+    "role": "vendor",
+    "business_name": "Example Store",
+    "is_approved": false,
+    "requested_categories": ["Electronics"]
+  },
+  "products": {
+    "vendor_id": "vendor-id",
+    "title": "Example product",
+    "price": 0,
+    "images": []
+  }
+}`}</pre>
             </div>
           </div>
         </div>}
@@ -917,7 +831,7 @@ CREATE TABLE escrow_transactions (
           <div className="bg-[#18181e] border border-zinc-800 rounded-2xl p-6 space-y-5">
             <div>
               <h3 className="text-base font-bold text-white font-cinzel">
-                Local MySQL Migration & WebNexa Secure Settlement Testing Guide
+                MongoDB Configuration & WebNexa Secure Settlement Testing Guide
               </h3>
               <p className="text-xs text-zinc-400 mt-0.5">
                 Comprehensive step-by-step instructions for running migrations on your local machine and executing the secure payment lifecycle.
@@ -933,18 +847,15 @@ CREATE TABLE escrow_transactions (
                   <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs">
                     1
                   </span>
-                  <span>Setting Up MySQL & Running Migrations</span>
+                  <span>Connecting MongoDB Atlas</span>
                 </div>
                 <p className="text-zinc-400 text-[11px] leading-relaxed">
-                  WebNexa provides raw DDL scripts in <code className="text-purple-400">/server/database/schema.sql</code> and programmatic Sequelize models in <code className="text-purple-400">/server/database/sequelizeModels.ts</code>.
+                  Set your MongoDB connection string and database name in the server environment. Collections and required indexes are initialized by the application.
                 </p>
                 <div className="bg-black/60 p-3 rounded-lg font-mono text-[11px] text-zinc-300 space-y-1">
-                  <p className="text-zinc-500"># Log into your MySQL CLI or workbench</p>
-                  <p>mysql -u root -p</p>
-                  <p className="text-zinc-500"># Create database</p>
-                  <p>CREATE DATABASE webnexa_marketplace CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</p>
-                  <p className="text-zinc-500"># Run the full schema</p>
-                  <p>mysql -u root -p webnexa_marketplace &lt; server/database/schema.sql</p>
+                  <p>MONGODB_URI=mongodb+srv://&lt;user&gt;:&lt;password&gt;@&lt;cluster&gt;</p>
+                  <p>MONGODB_DB=webnexa_marketplace</p>
+                  <p>JWT_SECRET=&lt;random secret, at least 32 characters&gt;</p>
                 </div>
               </div>
 
@@ -959,14 +870,11 @@ CREATE TABLE escrow_transactions (
                   <span>Environment Variables Configuration (.env)</span>
                 </div>
                 <p className="text-zinc-400 text-[11px]">
-                  Configure your MySQL connection string and Paystack test keys:
+                  Configure MongoDB and payment provider keys:
                 </p>
                 <div className="bg-black/60 p-3 rounded-lg font-mono text-[11px] text-zinc-300 space-y-1">
-                  <p>DB_HOST=localhost</p>
-                  <p>DB_PORT=3306</p>
-                  <p>DB_USER=root</p>
-                  <p>DB_PASSWORD=your_mysql_password</p>
-                  <p>DB_NAME=webnexa_marketplace</p>
+                  <p>MONGODB_URI=your_mongodb_connection_string</p>
+                  <p>MONGODB_DB=webnexa_marketplace</p>
                   <p>JWT_SECRET=your_long_random_secret</p>
                   <p>PAYSTACK_SECRET_KEY=your_paystack_secret_key</p>
                   <p>PAYSTACK_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxx</p>

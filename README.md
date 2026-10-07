@@ -32,4 +32,4 @@ Add these environment variables to the Vercel project before deploying:
 
 After deployment, `GET /api/health` reports whether the function can reach MongoDB Atlas. Keep the connection string and administrator password in Vercel's Environment Variables; do not commit them.
 
-The existing `server.js` application still contains the rest of the marketplace API and uses MySQL and Socket.IO. Those routes are not implemented by the Vercel authentication functions and need a separately hosted backend or a broader migration before the catalog, checkout, messaging, and dashboard APIs can run on Vercel.
+The `server.js` application uses MongoDB for account and product persistence and Socket.IO for live messaging. Configure `MONGODB_URI`, `MONGODB_DB`, and `JWT_SECRET` in the server environment before starting the application. Database-dependent routes return JSON service errors when MongoDB is unavailable.

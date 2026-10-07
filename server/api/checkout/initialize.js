@@ -1,7 +1,7 @@
 import { getBuyerForRequest, getDatabase } from "../_mongoAuth.js";
 import { flutterwaveRequest, toNaira } from "../_flutterwave.js";
-import { store } from "../../../server/store.js";
 import { randomUUID } from "node:crypto";
+import { mongoIdFilters } from "../../utils/mongoId.js";
 
 function appUrl(req) {
   return (process.env.FRONTEND_URL || process.env.APP_URL || `https://${req.headers.host}`).replace(/\/$/, "");
@@ -40,16 +40,13 @@ export default async function handler(req, res) {
       is_active: { $ne: false },
       is_approved_by_admin: { $ne: false }
     }).toArray() : [];
-    const useSeedProducts = storedProducts.length === 0;
-    const products = useSeedProducts
-      ? store.products.filter((product) => requestedIds.includes(String(product.id)) && product.is_active && product.is_approved_by_admin)
-      : storedProducts;
+    const products = storedProducts;
     const vendorIds = [...new Set(products.map((product) => String(product.vendor_id || "")).filter(Boolean))];
-    const storedVendors = vendorIds.length && !useSeedProducts ? await db.collection("accounts").find({
+    const storedVendors = vendorIds.length ? await db.collection("accounts").find({
       role: "vendor",
-      $or: [{ id: { $in: vendorIds } }, { _id: { $in: vendorIds } }]
+      $or: vendorIds.flatMap(mongoIdFilters)
     }).project({ id: 1, business_name: 1, is_approved: 1 }).toArray() : [];
-    const vendors = new Map((useSeedProducts ? store.vendors : storedVendors).map((vendor) => [String(vendor.id), vendor]));
+    const vendors = new Map(storedVendors.map((vendor) => [String(vendor.id || vendor._id), vendor]));
     const productMap = new Map(products.map((product) => [String(product.id || product._id), product]));
     const orderItems = [];
 

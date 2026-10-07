@@ -20,11 +20,17 @@ function safeNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function recordId(record) {
+  if (typeof record.id === "string" && record.id.trim()) return record.id.trim();
+  return record._id == null ? "" : String(record._id);
+}
+
 export function normalizeLegacyProduct(product) {
   if (!product || typeof product !== "object" || Array.isArray(product)) return null;
 
   const normalized = {
     ...product,
+    id: recordId(product),
     title: safeString(product.title, DEFAULT_PRODUCT.title),
     description: safeString(product.description, DEFAULT_PRODUCT.description),
     category: safeString(product.category, DEFAULT_PRODUCT.category),
@@ -44,6 +50,7 @@ export function normalizeLegacyVendor(vendor) {
 
   return {
     ...vendor,
+    id: recordId(vendor),
     business_name: safeString(vendor.business_name, "Unnamed vendor"),
     contact_person: safeString(vendor.contact_person),
     store_description: safeString(vendor.store_description),
@@ -61,6 +68,7 @@ export function normalizeLegacyBuyer(buyer) {
 
   return {
     ...buyer,
+    id: recordId(buyer),
     full_name: safeString(buyer.full_name, "Buyer"),
     phone: safeString(buyer.phone),
     shipping_address_line1: safeString(buyer.shipping_address_line1),
@@ -84,6 +92,7 @@ export function normalizeLegacyOrder(order) {
 
   return {
     ...order,
+    id: recordId(order),
     total_amount: safeNumber(order.total_amount),
     items: Array.isArray(order.items)
       ? order.items.filter((item) => item && typeof item === "object" && !Array.isArray(item)).map((item) => ({

@@ -12,7 +12,7 @@
     "server": "node server.js",
     "build:server": "esbuild server.js --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
     "build": "vite build && npm run build:server",
-    "test:compat": "node --test server/utils/legacyData.test.js",
+    "test:compat": "node --test server/utils/legacyData.test.js server/api/_mongoAuth.test.js",
     "start": "node dist/server.js",
     "clean": "rm -rf dist"
   },
@@ -33,11 +33,9 @@
     "lucide-react": "^1.52.0",
     "mongodb": "^7.7.0",
     "mongoose": "^9.11.0",
-    "mysql2": "^3.24.5",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",
-    "sequelize": "^6.37.8",
     "socket.io": "^4.8.4",
     "socket.io-client": "^4.8.4",
     "tailwind-merge": "^3.7.0"

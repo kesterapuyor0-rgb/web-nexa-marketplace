@@ -1,84 +1,95 @@
-import { store } from "../store.js";
+import { randomUUID } from "node:crypto";
+import { getDatabase } from "../api/_mongoAuth.js";
 import { getVendorRating } from "./vendorReviews.js";
-import { filterProductsByBuyerLocation } from "../utils/productLocation.js";
 import { normalizeLegacyProduct } from "../utils/legacyData.js";
+import { mongoIdFilters } from "../utils/mongoId.js";
+
+function sendDatabaseError(res, operation, error) {
+  console.error(`[products] ${operation} failed`, {
+    message: error instanceof Error ? error.message : String(error),
+    code: error?.code
+  });
+  res.status(503).json({ error: "Product data is temporarily unavailable. Please try again." });
+}
+
+function validateImages(images) {
+  const productImages = Array.isArray(images)
+    ? images.filter((image) => typeof image === "string" && image.trim())
+    : [];
+  for (const image of productImages) {
+    if (image.startsWith("data:")) {
+      if (!/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/=\s]+$/.test(image)) {
+        return { error: "Product image must be a valid JPEG, PNG, WEBP, or GIF file." };
+      }
+      if (image.length > 7 * 1024 * 1024) {
+        return { status: 413, error: "Product image is too large. Please upload an image under 5 MB." };
+      }
+    } else if (!/^https?:\/\/\S+$/i.test(image)) {
+      return { error: "Product image URLs must use http or https." };
+    }
+  }
+  return { images: productImages };
+}
+
+function productQuery(id, vendorId) {
+  const idFilter = { $or: [...mongoIdFilters(id), { slug: id }] };
+  return vendorId ? { $and: [idFilter, { vendor_id: vendorId }] } : idFilter;
+}
+
 export async function getProducts(req, res) {
   try {
-    const { category, search, vendorId } = req.query;
-    let filtered = (Array.isArray(store.products) ? store.products : [])
-      .map(normalizeLegacyProduct)
-      .filter((product) => product && product.is_active && product.is_approved_by_admin);
-    if (category && category !== "All") {
-      filtered = filtered.filter((p) => p.category.toLowerCase() === String(category).toLowerCase());
-    }
-    if (search) {
-      const q = String(search).toLowerCase();
-      filtered = filtered.filter(
-        (p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || String(p.vendor_name || "").toLowerCase().includes(q)
-      );
-    }
-    if (vendorId) {
-      filtered = filtered.filter((p) => p.vendor_id === String(vendorId));
-    }
-    const locationFiltered = filterProductsByBuyerLocation(filtered, req.buyer, (product) =>
-      store.vendors.find((vendor) => vendor.id === product.vendor_id)
-    );
-    const productsWithRatings = locationFiltered.products.map((product) => {
-      const rating = getVendorRating(product.vendor_id);
-      const vendor = store.vendors.find((candidate) => candidate.id === product.vendor_id);
-      const withLocation = vendor ? { ...product, vendor_location: { city: vendor.city || "", state: vendor.state || "", country: vendor.country || "", location: vendor.location || "" } } : product;
-      return rating.review_count > 0 ? { ...withLocation, rating: rating.average_rating, reviews_count: rating.review_count } : withLocation;
-    });
-    res.json({
-      products: productsWithRatings,
-      location: {
-        ...locationFiltered.location,
-        buyer: req.buyer ? { city: req.buyer.city || "", state: req.buyer.state || "", country: req.buyer.country || "" } : null
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to retrieve products: " + err.message });
+    const db = await getDatabase();
+    const products = await db.collection("products")
+      .find({ is_active: { $ne: false }, is_approved_by_admin: { $ne: false } })
+      .sort({ created_at: -1 })
+      .limit(500)
+      .toArray();
+    res.json({ products: products.map(normalizeLegacyProduct).filter(Boolean) });
+  } catch (error) {
+    sendDatabaseError(res, "Catalog query", error);
   }
 }
+
 export async function getProductById(req, res) {
   try {
-    const { id } = req.params;
-    const product = (Array.isArray(store.products) ? store.products : []).map(normalizeLegacyProduct).find((p) => p && (p.id === id || p.slug === id));
+    const db = await getDatabase();
+    const rawProduct = await db.collection("products").findOne(productQuery(String(req.params.id || "")));
+    const product = normalizeLegacyProduct(rawProduct);
     if (!product) {
       res.status(404).json({ error: "Product not found." });
       return;
     }
-    const vendor = store.vendors.find((v) => v.id === product.vendor_id);
-    const vendorRating = getVendorRating(product.vendor_id);
+    const vendor = await db.collection("accounts").findOne(
+      { role: "vendor", $or: mongoIdFilters(product.vendor_id) },
+      { projection: { password_hash: 0 } }
+    );
     res.json({
       product,
       vendor: vendor ? {
-        id: vendor.id,
-        business_name: vendor.business_name,
-        contact_person: vendor.contact_person,
-        is_approved: vendor.is_approved,
-        store_logo_url: vendor.store_logo_url,
-        ...vendorRating
+        id: vendor.id || String(vendor._id),
+        business_name: vendor.business_name || "Unnamed vendor",
+        contact_person: vendor.contact_person || "",
+        is_approved: vendor.is_approved === true,
+        store_logo_url: vendor.store_logo_url || "",
+        ...await getVendorRating(product.vendor_id)
       } : null
     });
-  } catch (err) {
-    res.status(500).json({ error: "Product query failed: " + err.message });
+  } catch (error) {
+    sendDatabaseError(res, "Product query", error);
   }
 }
+
 export async function getVendorProducts(req, res) {
   try {
-    if (!req.vendor) {
-      res.status(401).json({ error: "Vendor unauthorized." });
-      return;
-    }
-    const vendorProducts = (Array.isArray(store.products) ? store.products : [])
-      .map(normalizeLegacyProduct)
-      .filter((product) => product && product.vendor_id === req.vendor.id);
-    res.json({ products: vendorProducts });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch vendor catalog: " + err.message });
+    const db = await getDatabase();
+    const vendorId = String(req.vendor.id || req.vendor._id);
+    const products = await db.collection("products").find({ vendor_id: vendorId }).sort({ created_at: -1 }).toArray();
+    res.json({ products: products.map(normalizeLegacyProduct).filter(Boolean) });
+  } catch (error) {
+    sendDatabaseError(res, "Vendor catalog query", error);
   }
 }
+
 export async function createProduct(req, res) {
   try {
     const vendor = req.vendor;
@@ -86,100 +97,126 @@ export async function createProduct(req, res) {
       res.status(401).json({ error: "Vendor unauthorized." });
       return;
     }
-    if (!vendor.is_approved) {
+    if (vendor.is_approved !== true) {
       res.status(403).json({
         error: "Forbidden: Vendor Verification Pending",
         message: "Your vendor account is pending verification by The WebNexa Platform. You cannot publish products until verification is completed."
       });
       return;
     }
-    const { title, description, price, compare_at_price, inventory_count, category, images, tags } = req.body;
-    if (!title || !description || price === void 0) {
+    const body = req.body && typeof req.body === "object" && !Array.isArray(req.body) ? req.body : {};
+    const { title, description, price, compare_at_price, inventory_count, category, images, tags } = body;
+    if (typeof title !== "string" || !title.trim() || typeof description !== "string" || !description.trim() || price === undefined) {
       res.status(400).json({ error: "Title, description, and price are required." });
       return;
     }
-    const productImages = Array.isArray(images) ? images.filter((image) => typeof image === "string" && image.trim().length > 0) : [];
-    for (const image of productImages) {
-      if (image.startsWith("data:")) {
-        if (!/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/=\s]+$/.test(image)) {
-          res.status(400).json({ error: "Product image must be a valid JPEG, PNG, WEBP, or GIF file." });
-          return;
-        }
-        if (image.length > 7 * 1024 * 1024) {
-          res.status(413).json({ error: "Product image is too large. Please upload an image under 5 MB." });
-          return;
-        }
-      } else if (!/^https?:\/\/\S+$/i.test(image)) {
-        res.status(400).json({ error: "Product image URLs must use http or https." });
-        return;
-      }
+    const numericPrice = Number(price);
+    if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+      res.status(400).json({ error: "Price must be a valid non-negative number." });
+      return;
     }
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Math.floor(1e3 + Math.random() * 9e3);
-    const newProduct = {
-      id: `prod-${Date.now()}`,
-      vendor_id: vendor.id,
-      vendor_name: vendor.business_name,
-      title: title.trim(),
-      slug,
+    const validatedImages = validateImages(images);
+    if (validatedImages.error) {
+      res.status(validatedImages.status || 400).json({ error: validatedImages.error });
+      return;
+    }
+    const now = new Date().toISOString();
+    const cleanTitle = title.trim();
+    const id = `prod-${randomUUID()}`;
+    const product = {
+      id,
+      vendor_id: String(vendor.id || vendor._id),
+      vendor_name: vendor.business_name || "Unnamed vendor",
+      title: cleanTitle,
+      slug: `${cleanTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${randomUUID().slice(0, 8)}`,
       description: description.trim(),
-      price: Number(price),
-      compare_at_price: compare_at_price ? Number(compare_at_price) : void 0,
-      inventory_count: Number(inventory_count) || 1,
-      category: category || "Hardware & Gear",
-      tags: Array.isArray(tags) ? tags.map((tag) => String(tag).trim()).filter(Boolean) : [],
-      images: productImages.length > 0 ? productImages : ["https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80"],
+      price: numericPrice,
+      ...(compare_at_price !== undefined && Number.isFinite(Number(compare_at_price)) ? { compare_at_price: Number(compare_at_price) } : {}),
+      inventory_count: Number.isFinite(Number(inventory_count)) ? Number(inventory_count) : 1,
+      category: typeof category === "string" && category.trim() ? category.trim() : "Hardware & Gear",
+      tags: Array.isArray(tags) ? tags.filter((tag) => typeof tag === "string").map((tag) => tag.trim()).filter(Boolean) : [],
+      images: validatedImages.images.length ? validatedImages.images : ["https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80"],
       is_active: true,
       is_approved_by_admin: true,
-      created_at: (/* @__PURE__ */ new Date()).toISOString(),
-      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      created_at: now,
+      updated_at: now
     };
-    store.products.unshift(newProduct);
-    res.status(201).json({ message: "Product published to WebNexa marketplace.", product: newProduct });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to create product: " + err.message });
+    await (await getDatabase()).collection("products").insertOne(product);
+    res.status(201).json({ message: "Product published to WebNexa marketplace.", product });
+  } catch (error) {
+    sendDatabaseError(res, "Product creation", error);
   }
 }
+
 export async function updateProduct(req, res) {
   try {
     const vendor = req.vendor;
-    const { id } = req.params;
-    const product = store.products.find((p) => p.id === id);
-    if (!product) {
-      res.status(404).json({ error: "Product not found." });
+    if (!vendor) {
+      res.status(401).json({ error: "Vendor unauthorized." });
       return;
     }
-    if (product.vendor_id !== vendor.id) {
-      res.status(403).json({ error: "Unauthorized. You can only edit your own company catalog items." });
+    const db = await getDatabase();
+    const vendorId = String(vendor.id || vendor._id);
+    const query = productQuery(String(req.params.id || ""), vendorId);
+    const existing = await db.collection("products").findOne(query);
+    if (!existing) {
+      const anyProduct = await db.collection("products").findOne(productQuery(String(req.params.id || "")));
+      res.status(anyProduct ? 403 : 404).json({ error: anyProduct ? "Unauthorized. You can only edit your own company catalog items." : "Product not found." });
       return;
     }
-    const { title, description, price, compare_at_price, inventory_count, category, images, tags, is_active } = req.body;
-    if (title) product.title = title.trim();
-    if (description) product.description = description.trim();
-    if (price !== void 0) product.price = Number(price);
-    if (compare_at_price !== void 0) product.compare_at_price = Number(compare_at_price);
-    if (inventory_count !== void 0) product.inventory_count = Number(inventory_count);
-    if (category) product.category = category;
-    if (Array.isArray(images)) product.images = images;
-    if (Array.isArray(tags)) product.tags = tags.map((tag) => String(tag).trim()).filter(Boolean);
-    if (is_active !== void 0) product.is_active = Boolean(is_active);
-    product.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    res.json({ message: "Product updated.", product });
-  } catch (err) {
-    res.status(500).json({ error: "Update product failed: " + err.message });
+    const body = req.body && typeof req.body === "object" && !Array.isArray(req.body) ? req.body : {};
+    const updates = {};
+    if (typeof body.title === "string" && body.title.trim()) updates.title = body.title.trim();
+    if (typeof body.description === "string" && body.description.trim()) updates.description = body.description.trim();
+    for (const field of ["price", "compare_at_price", "inventory_count"]) {
+      if (body[field] !== undefined) {
+        const value = Number(body[field]);
+        if (!Number.isFinite(value) || value < 0) {
+          res.status(400).json({ error: `${field} must be a valid non-negative number.` });
+          return;
+        }
+        updates[field] = value;
+      }
+    }
+    if (typeof body.category === "string" && body.category.trim()) updates.category = body.category.trim();
+    if (Array.isArray(body.images)) {
+      const validatedImages = validateImages(body.images);
+      if (validatedImages.error) {
+        res.status(validatedImages.status || 400).json({ error: validatedImages.error });
+        return;
+      }
+      updates.images = validatedImages.images;
+    }
+    if (Array.isArray(body.tags)) updates.tags = body.tags.filter((tag) => typeof tag === "string").map((tag) => tag.trim()).filter(Boolean);
+    if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
+    if (updates.title) updates.slug = `${updates.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${randomUUID().slice(0, 8)}`;
+    updates.updated_at = new Date().toISOString();
+    const result = await db.collection("products").findOneAndUpdate(query, { $set: updates }, { returnDocument: "after" });
+    const product = result?.value || result;
+    res.json({ message: "Product updated.", product: normalizeLegacyProduct(product) });
+  } catch (error) {
+    sendDatabaseError(res, "Product update", error);
   }
 }
+
 export async function deleteProduct(req, res) {
   try {
     const vendor = req.vendor;
-    const { id } = req.params;
-    const index = store.products.findIndex((p) => p.id === id && p.vendor_id === vendor.id);
-    if (index === -1) {
+    if (!vendor) {
+      res.status(401).json({ error: "Vendor unauthorized." });
+      return;
+    }
+    const db = await getDatabase();
+    const vendorId = String(vendor.id || vendor._id);
+    const query = productQuery(String(req.params.id || ""), vendorId);
+    const product = await db.collection("products").findOne(query);
+    if (!product) {
       res.status(404).json({ error: "Product not found or access denied." });
       return;
     }
-    const removed = store.products.splice(index, 1);
-    res.json({ message: "Product deleted from marketplace.", product: removed[0] });
-  } catch (err) {
-    res.status(500).json({ error: "Delete product failed: " + err.message });
+    await db.collection("products").deleteOne({ _id: product._id });
+    res.json({ message: "Product deleted from marketplace.", product: normalizeLegacyProduct(product) });
+  } catch (error) {
+    sendDatabaseError(res, "Product deletion", error);
   }
 }

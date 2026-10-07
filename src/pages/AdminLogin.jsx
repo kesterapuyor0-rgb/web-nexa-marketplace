@@ -123,7 +123,7 @@ export const AdminLogin = () => {
 
         <div className="border-t border-zinc-800/80 pt-4 text-center text-[11px] text-zinc-500 space-y-1">
           <p>This portal is strictly monitored and audited.</p>
-          <p className="font-mono text-[10px] text-zinc-600">IP & Authorization events logged to immutable MySQL ledger.</p>
+          <p className="font-mono text-[10px] text-zinc-600">Authorization and account data are managed through MongoDB.</p>
         </div>
       </div>
     </div>;
