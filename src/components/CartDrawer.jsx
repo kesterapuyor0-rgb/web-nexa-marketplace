@@ -1,6 +1,6 @@
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   X,
   Trash2,
@@ -32,7 +32,9 @@ export const CartDrawer = () => {
     dismissCartNotice
   } = useCart();
   const { role, token } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  if (location.pathname.startsWith("/vendor/")) return null;
   const toast = cartNotice ? <div className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-[#18221d] px-4 py-3 text-xs font-semibold text-emerald-200 shadow-2xl animate-in fade-in slide-in-from-bottom-2">
       <ShieldCheck className="h-4 w-4 text-emerald-400" />
       <span>{cartNotice}</span>

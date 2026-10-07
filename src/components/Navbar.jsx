@@ -135,7 +135,7 @@ export const Navbar = () => {
           {
     /* Marketplace Search Bar */
   }
-          <SearchAutocomplete searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} />
+          {!isVendorPortal && <SearchAutocomplete searchQuery={searchQuery} onSearchQueryChange={setSearchQuery} />}
         </div>
 
         {
@@ -146,7 +146,7 @@ export const Navbar = () => {
           {
     /* Cart Icon Button */
   }
-          <button
+          {!isVendorPortal && <button
     id="open-cart-button"
     onClick={() => setIsCartOpen(true)}
     className="relative h-10 w-10 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 transition-all flex items-center justify-center shadow-sm"
@@ -156,7 +156,7 @@ export const Navbar = () => {
             {totalCount > 0 && <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-pulse">
                 {totalCount}
               </span>}
-          </button>
+          </button>}
 
           {role === "vendor" && <button
       type="button"
@@ -340,14 +340,14 @@ export const Navbar = () => {
       {
     /* Mobile search bar visible on small screens below sm */
   }
-      <div className="sm:hidden px-4 pb-3 pt-1 border-t border-zinc-800/60">
+      {!isVendorPortal && <div className="sm:hidden px-4 pb-3 pt-1 border-t border-zinc-800/60">
         <SearchAutocomplete
     inputId="mobile-marketplace-search-input"
     searchQuery={searchQuery}
     onSearchQueryChange={setSearchQuery}
     placeholder="Search verified gear, brands..."
   />
-      </div>
+      </div>}
       {!isVendorPortal && <nav aria-label="Browse categories" className={`${isMarketplace ? "hidden" : "flex"} mobile-category-nav sm:hidden gap-2 overflow-x-auto px-4 pb-3`}>
         {categories.map((category) => {
     const Icon = category.icon;
