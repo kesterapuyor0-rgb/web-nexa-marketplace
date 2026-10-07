@@ -18,3 +18,19 @@ View your app in AI Studio: https://ai.studio/apps/d56b6ffc-5d9f-4e33-a95d-4b17f
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Vercel authentication and MongoDB Atlas
+
+The Vercel functions in `api/` provide the health check and buyer, vendor, and admin password-authentication endpoints. They store accounts in MongoDB Atlas, in the `accounts` collection of the database selected by `MONGODB_DB` (default: `webnexa_marketplace`).
+
+Add these environment variables to the Vercel project before deploying:
+
+- `MONGODB_URI`: the Atlas connection string for a database user with read/write access.
+- `MONGODB_DB`: database name, for example `webnexa_marketplace`.
+- `JWT_SECRET`: a private random value of at least 32 characters.
+- `ADMIN_EMAIL` and `ADMIN_PASSWORD`: the first administrator account. The account is created in MongoDB the first time those credentials are used to sign in.
+- `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`: the same Google OAuth client ID, for server-side verification and the browser sign-in button.
+
+After deployment, `GET /api/health` reports whether the function can reach MongoDB Atlas. Keep the connection string and administrator password in Vercel's Environment Variables; do not commit them.
+
+The existing `server.ts` application still contains the rest of the marketplace API and uses MySQL and Socket.IO. Those routes are not implemented by the Vercel authentication functions and need a separately hosted backend or a broader migration before the catalog, checkout, messaging, and dashboard APIs can run on Vercel.
