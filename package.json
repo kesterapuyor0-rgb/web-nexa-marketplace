@@ -9,11 +9,11 @@
     "client": "wait-on http://127.0.0.1:5000/api/health && vite",
     "dev:client": "npm run client",
     "dev:server": "npm run server",
-    "server": "tsx server.ts",
-    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
+    "server": "node server.js",
+    "build:server": "esbuild server.js --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
     "build": "vite build && npm run build:server",
     "start": "node dist/server.js",
-    "clean": "rm -rf dist server.js"
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -42,17 +42,9 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^26.6.4",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vercel/node": "^22.0.0",
     "concurrently": "^10.0.5",
     "esbuild": "^0.28.2",
     "kill-port": "^2.0.1",
-    "tsx": "^4.23.15",
     "vite": "^8.3.3",
     "wait-on": "^9.5.1"
   }
