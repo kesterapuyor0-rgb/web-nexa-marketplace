@@ -1,9 +1,12 @@
 import { getBuyerForRequest, getDatabase } from "./_mongoAuth.js";
 import { store } from "../../server/store.js";
 import { filterProductsByBuyerLocation } from "../../server/utils/productLocation.js";
+import { normalizeLegacyBuyer, normalizeLegacyProduct } from "../../server/utils/legacyData.js";
 
 function normalizeProduct(product, vendor) {
-  const { _id, vendor: embeddedVendor, vendor_location, location, ...fields } = product;
+  const normalizedProduct = normalizeLegacyProduct(product);
+  if (!normalizedProduct) return null;
+  const { _id, vendor: embeddedVendor, vendor_location, location, ...fields } = normalizedProduct;
   const resolvedVendor = vendor || embeddedVendor;
   return {
     ...fields,
@@ -37,7 +40,7 @@ export default async function handler(req, res) {
 
   try {
     const db = await getDatabase();
-    const buyer = await getBuyerForRequest(req, db);
+    const buyer = normalizeLegacyBuyer(await getBuyerForRequest(req, db));
     const storedProducts = await db.collection("products").find({
       is_active: { $ne: false },
       is_approved_by_admin: { $ne: false }
@@ -56,14 +59,17 @@ export default async function handler(req, res) {
       products = storedProducts.flatMap((product) => {
         const vendor = vendors.get(String(product.vendor_id || "")) || product.vendor;
         if (!product.vendor_id || vendor?.is_approved === false) return [];
-        return [normalizeProduct(product, vendor)];
+        const normalizedProduct = normalizeProduct(product, vendor);
+        return normalizedProduct ? [normalizedProduct] : [];
       });
       source = "database";
     } else {
-      const seededVendors = new Map(store.vendors.map((vendor) => [vendor.id, vendor]));
-      products = store.products
-        .filter((product) => product.is_active && product.is_approved_by_admin)
-        .map((product) => normalizeProduct(product, seededVendors.get(product.vendor_id)));
+      const seededVendors = new Map((Array.isArray(store.vendors) ? store.vendors : [])
+        .filter((vendor) => vendor && vendor.id)
+        .map((vendor) => [vendor.id, vendor]));
+      products = (Array.isArray(store.products) ? store.products : [])
+        .map((product) => normalizeProduct(product, seededVendors.get(product?.vendor_id)))
+        .filter((product) => product && product.is_active && product.is_approved_by_admin);
       source = "fallback";
     }
 

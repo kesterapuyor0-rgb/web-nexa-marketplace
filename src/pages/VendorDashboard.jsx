@@ -117,7 +117,14 @@ export const VendorDashboard = () => {
       });
       if (oRes.ok) {
         const oData = await oRes.json();
-        setOrders(oData.orders || []);
+        setOrders(Array.isArray(oData.orders) ? oData.orders.filter((order) => order && typeof order === "object").map((order) => ({
+          ...order,
+          items: Array.isArray(order.items) ? order.items.filter((item) => item && typeof item === "object") : [],
+          shipping_address: order.shipping_address && typeof order.shipping_address === "object" && !Array.isArray(order.shipping_address)
+            ? order.shipping_address
+            : {},
+          vendor_payout_amount: Number(order.vendor_payout_amount) || 0
+        })) : []);
       }
     } catch (err) {
       console.error(err);

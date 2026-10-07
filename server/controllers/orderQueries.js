@@ -1,4 +1,5 @@
 import { store } from "../store.js";
+import { normalizeLegacyOrder } from "../utils/legacyData.js";
 export async function getBuyerOrders(req, res) {
   try {
     const buyer = req.buyer;
@@ -6,7 +7,9 @@ export async function getBuyerOrders(req, res) {
       res.status(401).json({ error: "Buyer unauthorized." });
       return;
     }
-    const orders = store.orders.filter((o) => o.buyer_id === buyer.id);
+    const orders = (Array.isArray(store.orders) ? store.orders : [])
+      .map(normalizeLegacyOrder)
+      .filter((order) => order && order.buyer_id === buyer.id);
     res.json({ orders });
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve buyer orders: " + err.message });
@@ -19,9 +22,11 @@ export async function getVendorOrders(req, res) {
       res.status(401).json({ error: "Vendor unauthorized." });
       return;
     }
-    const orders = store.orders.filter(
-      (o) => o.vendor_id === vendor.id || o.items.some((i) => i.vendor_id === vendor.id)
-    );
+    const orders = (Array.isArray(store.orders) ? store.orders : [])
+      .map(normalizeLegacyOrder)
+      .filter((order) => order && (
+        order.vendor_id === vendor.id || order.items.some((item) => item.vendor_id === vendor.id)
+      ));
     res.json({ orders });
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve vendor orders: " + err.message });

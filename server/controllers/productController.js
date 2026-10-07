@@ -1,17 +1,20 @@
 import { store } from "../store.js";
 import { getVendorRating } from "./vendorReviews.js";
 import { filterProductsByBuyerLocation } from "../utils/productLocation.js";
+import { normalizeLegacyProduct } from "../utils/legacyData.js";
 export async function getProducts(req, res) {
   try {
     const { category, search, vendorId } = req.query;
-    let filtered = store.products.filter((p) => p.is_active && p.is_approved_by_admin);
+    let filtered = (Array.isArray(store.products) ? store.products : [])
+      .map(normalizeLegacyProduct)
+      .filter((product) => product && product.is_active && product.is_approved_by_admin);
     if (category && category !== "All") {
       filtered = filtered.filter((p) => p.category.toLowerCase() === String(category).toLowerCase());
     }
     if (search) {
       const q = String(search).toLowerCase();
       filtered = filtered.filter(
-        (p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.vendor_name.toLowerCase().includes(q)
+        (p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || String(p.vendor_name || "").toLowerCase().includes(q)
       );
     }
     if (vendorId) {
@@ -40,7 +43,7 @@ export async function getProducts(req, res) {
 export async function getProductById(req, res) {
   try {
     const { id } = req.params;
-    const product = store.products.find((p) => p.id === id || p.slug === id);
+    const product = (Array.isArray(store.products) ? store.products : []).map(normalizeLegacyProduct).find((p) => p && (p.id === id || p.slug === id));
     if (!product) {
       res.status(404).json({ error: "Product not found." });
       return;
@@ -68,7 +71,9 @@ export async function getVendorProducts(req, res) {
       res.status(401).json({ error: "Vendor unauthorized." });
       return;
     }
-    const vendorProducts = store.products.filter((p) => p.vendor_id === req.vendor.id);
+    const vendorProducts = (Array.isArray(store.products) ? store.products : [])
+      .map(normalizeLegacyProduct)
+      .filter((product) => product && product.vendor_id === req.vendor.id);
     res.json({ products: vendorProducts });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch vendor catalog: " + err.message });

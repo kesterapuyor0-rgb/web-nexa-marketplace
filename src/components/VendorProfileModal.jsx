@@ -8,7 +8,17 @@ export const VendorProfileModal = ({ vendorId, vendorName, onClose }) => {
     fetch(`/api/vendors/${encodeURIComponent(vendorId)}/profile`).then(async (response) => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to load vendor profile.");
-      if (active) setProfile(data);
+      if (active) setProfile({
+        ...data,
+        vendor: data.vendor && typeof data.vendor === "object" ? data.vendor : {},
+        rating: {
+          ...(data.rating && typeof data.rating === "object" ? data.rating : {}),
+          average_rating: Number(data.rating?.average_rating) || 0,
+          review_count: Number(data.rating?.review_count) || 0
+        },
+        products: Array.isArray(data.products) ? data.products.filter((product) => product && typeof product === "object") : [],
+        reviews: Array.isArray(data.reviews) ? data.reviews.filter((review) => review && typeof review === "object") : []
+      });
     }).catch((requestError) => {
       if (active) setError(requestError instanceof Error ? requestError.message : "Unable to load vendor profile.");
     });
@@ -41,7 +51,7 @@ export const VendorProfileModal = ({ vendorId, vendorName, onClose }) => {
             </div>
             <div>
               <h3 className="mb-3 font-semibold">Products from {profile.vendor.business_name}</h3>
-              {profile.products.length === 0 ? <p className="text-sm text-zinc-500">No active products are currently listed.</p> : <div className="grid gap-3 sm:grid-cols-2">{profile.products.map((product) => <div key={product.id} className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3"><p className="font-medium">{product.title}</p><p className="mt-1 text-sm text-purple-300">₦{product.price.toLocaleString()}</p></div>)}</div>}
+              {profile.products.length === 0 ? <p className="text-sm text-zinc-500">No active products are currently listed.</p> : <div className="grid gap-3 sm:grid-cols-2">{profile.products.map((product) => <div key={product.id} className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3"><p className="font-medium">{product.title || "Untitled product"}</p><p className="mt-1 text-sm text-purple-300">₦{(Number(product.price) || 0).toLocaleString()}</p></div>)}</div>}
             </div>
             <div>
               <h3 className="mb-3 font-semibold">Buyer ratings and reviews</h3>

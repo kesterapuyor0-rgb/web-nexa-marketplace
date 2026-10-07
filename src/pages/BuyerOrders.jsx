@@ -33,7 +33,13 @@ export const BuyerOrders = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setOrders(data.orders || []);
+        setOrders(Array.isArray(data.orders) ? data.orders.filter((order) => order && typeof order === "object").map((order) => ({
+          ...order,
+          items: Array.isArray(order.items) ? order.items.filter((item) => item && typeof item === "object") : [],
+          shipping_address: order.shipping_address && typeof order.shipping_address === "object" && !Array.isArray(order.shipping_address)
+            ? order.shipping_address
+            : {}
+        })) : []);
       }
     } catch (err) {
       console.error("Failed to load orders:", err);
@@ -142,9 +148,11 @@ export const BuyerOrders = () => {
             </button>
           </div> : orders.map((order) => {
     const currentStep = getStatusStep(order.status);
-    const vendorsToReview = Array.from(
-      new Map(
-        order.items.map((item) => [
+            const orderItems = Array.isArray(order.items) ? order.items : [];
+            const shippingAddress = order.shipping_address || {};
+            const vendorsToReview = Array.from(
+              new Map(
+                orderItems.map((item) => [
           item.vendor_id || order.vendor_id,
           item.vendor_name || order.vendor_name
         ])
@@ -227,7 +235,7 @@ export const BuyerOrders = () => {
                     <h4 className="text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
                       Purchased Items
                     </h4>
-                    {order.items.map((item) => <div
+                    {orderItems.map((item) => <div
       key={item.id}
       className="flex items-center gap-3 p-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800"
     >
@@ -239,7 +247,7 @@ export const BuyerOrders = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-zinc-200 truncate">{item.title}</p>
                           <p className="text-zinc-400 text-[11px]">
-                            Qty: {item.quantity} • ₦{item.price.toLocaleString()} each
+                            Qty: {item.quantity || 0} • ₦{Number(item.price || 0).toLocaleString()} each
                             {item.vendor_name && <span className="text-purple-300 ml-1.5 font-medium">• Sold by: {item.vendor_name}</span>}
                           </p>
                         </div>
@@ -251,11 +259,10 @@ export const BuyerOrders = () => {
                       Shipping & Delivery Destination
                     </h4>
                     <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-1">
-                      <p className="text-zinc-200 font-semibold">{order.shipping_address.recipient_name}</p>
-                      <p className="text-zinc-400">{order.shipping_address.phone}</p>
+                      <p className="text-zinc-200 font-semibold">{shippingAddress.recipient_name || "Recipient not provided"}</p>
+                      <p className="text-zinc-400">{shippingAddress.phone || ""}</p>
                       <p className="text-zinc-400 text-[11px]">
-                        {order.shipping_address.address_line1}, {order.shipping_address.city},{" "}
-                        {order.shipping_address.state}, {order.shipping_address.country}
+                        {[shippingAddress.address_line1, shippingAddress.address_line2, shippingAddress.city, shippingAddress.state, shippingAddress.country].filter(Boolean).join(", ") || "Delivery address not available"}
                       </p>
                     </div>
 

@@ -1,4 +1,5 @@
 import { getAccountForRequest, getDatabase } from "../_mongoAuth.js";
+import { normalizeLegacyOrder } from "../../utils/legacyData.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -14,10 +15,10 @@ export default async function handler(req, res) {
       $or: [{ vendor_id: vendorId }, { "vendor_splits.vendor_id": vendorId }]
     }).sort({ created_at: -1 }).limit(100).toArray();
     return res.json({
-      orders: orders.map((order) => ({
+      orders: orders.map(normalizeLegacyOrder).filter(Boolean).map((order) => ({
         ...order,
-        items: (order.items || []).filter((item) => String(item.vendor_id || order.vendor_id) === vendorId),
-        vendor_shipments: (order.vendor_shipments || []).filter((shipment) => shipment.vendor_id === vendorId)
+        items: order.items.filter((item) => String(item.vendor_id || order.vendor_id) === vendorId),
+        vendor_shipments: order.vendor_shipments.filter((shipment) => shipment?.vendor_id === vendorId)
       }))
     });
   } catch (error) {

@@ -7,10 +7,13 @@ Existing users, records, and integrations must remain readable and usable after 
 ## Required behavior
 
 - Preserve unknown legacy fields when a record is read, updated, or persisted.
-- Treat newly introduced fields as optional unless a migration explicitly makes them required.
+- Treat every newly introduced MongoDB or Sequelize field as optional or give it a safe default. Do not make an existing record invalid because it predates a field.
+- Enforce new-field requirements at the new-write API boundary when they are a business rule; do not add a database `required` constraint that blocks old records without a reviewed migration and backfill.
 - Use safe defaults for missing values; do not replace stored legacy values with defaults.
 - Treat malformed optional values as empty or zero only when the current consumer cannot safely use them.
 - Return stable API shapes; additions are backward-compatible, while removals require a deprecation window.
+- Guard values before calling methods such as `.map()`, `.filter()`, `.trim()`, `.toLowerCase()`, or `.includes()`; validate collection and object shapes at API boundaries.
+- Frontend views must tolerate missing profile fields, nested objects, and collections in legacy API responses.
 - Never expose password hashes, secrets, private account fields, or internal payment credentials.
 - Legacy records must remain valid when they lack modern category, location, review, image, or payment metadata.
 
@@ -20,8 +23,9 @@ Existing users, records, and integrations must remain readable and usable after 
 2. Add a normalization helper at the persistence/API boundary.
 3. Add defensive frontend rendering for nullable values and optional collections.
 4. Add regression tests with representative legacy records.
-5. Run the production build and smoke-test the affected endpoints.
-6. Deploy only after the compatibility tests pass.
+5. Normalize records at the persistence/API boundary and preserve unrecognized fields when writing them back.
+6. Run the compatibility test suite, production build, and smoke-test the affected endpoints.
+7. Deploy only after the compatibility tests pass.
 
 ## Safe defaults
 
@@ -42,3 +46,5 @@ Existing users, records, and integrations must remain readable and usable after 
 ## Enforcement
 
 A compatibility regression is considered resolved only when a legacy fixture can be normalized, rendered, and persisted without a crash, data loss, or accidental exposure of private fields.
+
+Run `npm run test:compat` before merging changes that affect schemas, API payloads, persistence, or legacy-facing UI. Include a legacy fixture whenever a new field is added to Buyer, Vendor, Product, or Order.

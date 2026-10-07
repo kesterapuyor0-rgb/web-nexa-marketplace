@@ -12,6 +12,7 @@
     "server": "node server.js",
     "build:server": "esbuild server.js --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
     "build": "vite build && npm run build:server",
+    "test:compat": "node --test server/utils/legacyData.test.js",
     "start": "node dist/server.js",
     "clean": "rm -rf dist"
   },
