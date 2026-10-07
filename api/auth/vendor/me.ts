@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { handleMongoAuth } from '../../../server/mongoAuth.ts';
+import { handleMongoAuth } from '../../_mongoAuth.js';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { handleMongoGoogleAuth } from '../../server/mongoAuth.ts';
+import { handleMongoGoogleAuth } from '../_mongoAuth.js';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
