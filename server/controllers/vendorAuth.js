@@ -3,6 +3,7 @@ import { store } from "../store.js";
 import { signJwtToken } from "../middleware/auth.js";
 import { getVendorRating } from "./vendorReviews.js";
 import { normalizePhoneE164 } from "../utils/phone.js";
+import { normalizeVendorCategories } from "../utils/vendorCategories.js";
 import { findVendorByEmail, findVendorByRegistrationNumber, isMysqlAvailable, saveVendorToMysql } from "../database/mysqlPersistence.js";
 export async function vendorRegister(req, res) {
   try {
@@ -24,6 +25,7 @@ export async function vendorRegister(req, res) {
       store_description,
       store_logo_url,
       business_category,
+      requested_categories,
       restaurant_business_type,
       operating_hours,
       delivery_radius_km,
@@ -34,6 +36,11 @@ export async function vendorRegister(req, res) {
       res.status(400).json({
         error: "Missing required fields. Business name, contact person, email, password, CAC/RC registration number, bank name, and bank account number are mandatory."
       });
+      return;
+    }
+    const normalizedCategories = normalizeVendorCategories(requested_categories);
+    if (normalizedCategories.length === 0) {
+      res.status(400).json({ error: "Select at least one marketplace category for your business." });
       return;
     }
     const normalizedEmail = email.trim().toLowerCase();
@@ -78,6 +85,7 @@ export async function vendorRegister(req, res) {
       created_at: (/* @__PURE__ */ new Date()).toISOString(),
       updated_at: (/* @__PURE__ */ new Date()).toISOString(),
       business_category: business_category === "RESTAURANT_FOOD" ? "RESTAURANT_FOOD" : "GENERAL",
+      requested_categories: normalizedCategories,
       restaurant_business_type: restaurant_business_type || "",
       operating_hours: operating_hours || "",
       delivery_radius_km: Number(delivery_radius_km) || 10,

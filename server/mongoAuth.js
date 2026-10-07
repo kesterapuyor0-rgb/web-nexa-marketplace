@@ -7,6 +7,7 @@ import {
   MongoServerError,
   ServerApiVersion
 } from "mongodb";
+import { normalizeVendorCategories } from "./utils/vendorCategories.js";
 const globalMongo = globalThis;
 async function getDatabase() {
   const uri = process.env.MONGODB_URI;
@@ -134,6 +135,7 @@ async function createAccount(db, role, body, res) {
       wallet_balance: 0,
       escrow_pending_balance: 0,
       business_category: body.business_category === "RESTAURANT_FOOD" ? "RESTAURANT_FOOD" : "GENERAL",
+      requested_categories: normalizeVendorCategories(body.requested_categories),
       restaurant_business_type: text(body.restaurant_business_type),
       operating_hours: text(body.operating_hours),
       delivery_radius_km: Number(body.delivery_radius_km) || 10,

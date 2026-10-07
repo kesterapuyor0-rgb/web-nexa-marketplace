@@ -3,6 +3,7 @@ import { ProductCartControl } from "../components/ProductCartControl.jsx";
 import { ProductDetailsModal } from "../components/ProductDetailsModal.jsx";
 import { Logo } from "../components/Logo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { MARKETPLACE_CATEGORIES } from "../config/categories.js";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
@@ -26,7 +27,8 @@ import {
   Server,
   Building,
   BadgePercent,
-  Layers
+  Layers,
+  Utensils
 } from "lucide-react";
 export const MarketplaceHome = () => {
   const { token, role } = useAuth();
@@ -62,12 +64,16 @@ export const MarketplaceHome = () => {
   };
   const categories = [
     { name: "All", icon: Layers, count: "All" },
-    { name: "Computing", icon: Monitor, count: "12 Items" },
-    { name: "Electronics", icon: Zap, count: "8 Items" },
-    { name: "Networking & Optics", icon: Wifi, count: "6 Items" },
-    { name: "Solar & Power Solutions", icon: Sun, count: "5 Items" },
-    { name: "Servers & Infrastructure", icon: Server, count: "4 Items" },
-    { name: "Home & Office", icon: Building, count: "7 Items" }
+    ...MARKETPLACE_CATEGORIES.filter((category) => category !== "Food & Drinks").map((name) => ({
+      name,
+      icon: name.includes("farm") || name.includes("provisions") || name.includes("Cosmetics") ? Utensils :
+        name.includes("Computing") || name.includes("Infrastructure") ? Monitor :
+          name.includes("Electronics") || name.includes("Phones") ? Zap :
+            name.includes("Networking") ? Wifi :
+              name.includes("Solar") ? Sun :
+                name.includes("Home") ? Building : Layers,
+      count: "Items"
+    }))
   ];
   const promoSlides = [
     {

@@ -1,6 +1,7 @@
 import mysql from "mysql2/promise";
 import fs from "fs/promises";
 import path from "path";
+import { normalizeVendorCategories } from "../utils/vendorCategories.js";
 const pool = mysql.createPool({
   host: process.env.MYSQL_HOST || "localhost",
   port: Number(process.env.MYSQL_PORT) || 3306,
@@ -114,6 +115,7 @@ export async function saveVendorToMysql(vendor) {
         bank_code,
         store_description,
         store_logo_url,
+        requested_categories,
         is_approved,
         rejection_reason,
         approved_at,
@@ -123,7 +125,7 @@ export async function saveVendorToMysql(vendor) {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         business_name = VALUES(business_name),
         contact_person = VALUES(contact_person),
@@ -140,6 +142,7 @@ export async function saveVendorToMysql(vendor) {
         bank_code = VALUES(bank_code),
         store_description = VALUES(store_description),
         store_logo_url = VALUES(store_logo_url),
+        requested_categories = VALUES(requested_categories),
         is_approved = VALUES(is_approved),
         rejection_reason = VALUES(rejection_reason),
         approved_at = VALUES(approved_at),
@@ -167,6 +170,7 @@ export async function saveVendorToMysql(vendor) {
       vendor.bank_code,
       vendor.store_description,
       vendor.store_logo_url,
+      JSON.stringify(vendor.requested_categories || []),
       vendor.is_approved,
       vendor.rejection_reason || null,
       formatMysqlDatetime(vendor.approved_at),
@@ -316,6 +320,7 @@ export async function findVendorByEmail(email) {
         bank_code,
         store_description,
         store_logo_url,
+        requested_categories,
         is_approved,
         rejection_reason,
         approved_at,
@@ -330,6 +335,7 @@ export async function findVendorByEmail(email) {
     `,
     [email]
   );
+  if (rows[0]) rows[0].requested_categories = normalizeVendorCategories(rows[0].requested_categories);
   return rows[0] || null;
 }
 export async function findVendorByRegistrationNumber(registrationNumber) {
@@ -355,6 +361,7 @@ export async function findVendorByRegistrationNumber(registrationNumber) {
         bank_code,
         store_description,
         store_logo_url,
+        requested_categories,
         is_approved,
         rejection_reason,
         approved_at,
@@ -369,6 +376,7 @@ export async function findVendorByRegistrationNumber(registrationNumber) {
     `,
     [registrationNumber]
   );
+  if (rows[0]) rows[0].requested_categories = normalizeVendorCategories(rows[0].requested_categories);
   return rows[0] || null;
 }
 export async function findAdminByEmail(email) {

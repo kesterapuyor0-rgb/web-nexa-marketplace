@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { AuthShell } from "../components/AuthShell.jsx";
 import { PhoneInput } from "../components/PhoneInput.jsx";
+import { MARKETPLACE_CATEGORIES } from "../config/categories.js";
 import {
   Building,
   Lock,
@@ -31,6 +32,7 @@ export const VendorRegister = () => {
     bank_code: "057",
     store_description: "",
     business_category: "GENERAL",
+    requested_categories: [],
     restaurant_business_type: "",
     operating_hours: "",
     delivery_radius_km: "10",
@@ -45,6 +47,14 @@ export const VendorRegister = () => {
   const navigate = useNavigate();
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+  const toggleCategory = (category) => {
+    setFormData((current) => ({
+      ...current,
+      requested_categories: current.requested_categories.includes(category)
+        ? current.requested_categories.filter((item) => item !== category)
+        : [...current.requested_categories, category]
+    }));
   };
   const handleLogoChange = (event) => {
     const file = event.target.files?.[0];
@@ -73,11 +83,15 @@ export const VendorRegister = () => {
     setIsLoading(true);
     setError(null);
     try {
+      if (formData.requested_categories.length === 0) {
+        throw new Error("Select at least one marketplace category for your business.");
+      }
       const res = await fetch("/api/auth/vendor/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          business_category: formData.requested_categories.includes("Food & Drinks") ? "RESTAURANT_FOOD" : "GENERAL",
           location: [formData.city, formData.state, formData.country].map((part) => part.trim()).filter(Boolean).join(", ")
         })
       });
@@ -204,6 +218,19 @@ export const VendorRegister = () => {
               <option value="GENERAL">General marketplace vendor</option>
               <option value="RESTAURANT_FOOD">Restaurant / Food Vendor</option>
             </select>
+            <div>
+              <label className="block text-zinc-400 mb-1">Marketplace Categories *</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {MARKETPLACE_CATEGORIES.map((category) => {
+                  const selected = formData.requested_categories.includes(category);
+                  return <label key={category} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-xs transition-colors ${selected ? "border-purple-500 bg-purple-500/10 text-purple-200" : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-zinc-600"}`}>
+                    <input type="checkbox" checked={selected} onChange={() => toggleCategory(category)} className="h-4 w-4 accent-purple-600" />
+                    {category}
+                  </label>;
+                })}
+              </div>
+              <p className="mt-2 text-[10px] text-zinc-500">Select one or more categories that describe your business.</p>
+            </div>
             {formData.business_category === "RESTAURANT_FOOD" && <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-zinc-400 mb-1">Restaurant / Brand Logo</label>
