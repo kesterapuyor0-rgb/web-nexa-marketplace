@@ -2,7 +2,7 @@
 -- WebNexa Multi-Vendor E-Commerce Marketplace
 -- Normalized MySQL Relational Schema
 -- Architecture: Strictly Separated Tables for `buyers`, `vendors`, and `admins`
--- Platform Features: Vendor Verification, Multi-Vendor Catalog, Escrow Ledger, Paystack Integration
+-- Platform Features: Vendor Verification, Multi-Vendor Catalog, Flutterwave Escrow Ledger
 -- =========================================================================
 
 CREATE DATABASE IF NOT EXISTS `webnexa_marketplace` 
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `wallet_transactions` (
   `direction` ENUM('credit', 'debit') NOT NULL,
   `amount` DECIMAL(18,2) NOT NULL,
   `currency` CHAR(3) NOT NULL DEFAULT 'NGN',
-  `provider` ENUM('paystack', 'nowpayments', 'internal') NOT NULL,
+  `provider` ENUM('flutterwave', 'paystack', 'nowpayments', 'internal') NOT NULL,
   `provider_reference` VARCHAR(255) NULL,
   `status` ENUM('pending', 'completed', 'failed') NOT NULL DEFAULT 'pending',
   `description` VARCHAR(500) NOT NULL,
@@ -208,6 +208,10 @@ CREATE TABLE IF NOT EXISTS `orders` (
     'REFUNDED',
     'DISPUTED'
   ) NOT NULL DEFAULT 'PENDING_PAYMENT',
+  `escrow_status` ENUM('pending', 'paid_in_escrow', 'delivered_confirmed', 'released') NOT NULL DEFAULT 'pending',
+  `payment_provider` VARCHAR(40) NULL,
+  `payment_reference` VARCHAR(120) NULL,
+  `flutterwave_transaction_id` VARCHAR(80) NULL,
   `shipping_address` JSON NOT NULL,
   `carrier_name` VARCHAR(100) NULL,
   `tracking_number` VARCHAR(100) NULL,
@@ -218,6 +222,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_orders_order_number` (`order_number`),
+  UNIQUE KEY `idx_orders_payment_reference` (`payment_reference`),
   KEY `idx_orders_buyer_id` (`buyer_id`),
   KEY `idx_orders_vendor_id` (`vendor_id`),
   KEY `idx_orders_status` (`status`),

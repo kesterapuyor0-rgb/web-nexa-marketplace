@@ -12,7 +12,6 @@ export const CartProvider = ({ children }) => {
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [cartNotice, setCartNotice] = useState(null);
   const cartNoticeTimer = useRef(null);
   useEffect(() => {
@@ -97,8 +96,6 @@ export const CartProvider = ({ children }) => {
       isAllSelected,
       isCartOpen,
       setIsCartOpen,
-      isCheckoutOpen,
-      setIsCheckoutOpen,
       cartNotice,
       dismissCartNotice: () => setCartNotice(null)
     }}

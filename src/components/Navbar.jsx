@@ -23,7 +23,7 @@ import {
   Utensils
 } from "lucide-react";
 import { SearchAutocomplete } from "./SearchAutocomplete.jsx";
-import { Wallet, RefreshCw } from "lucide-react";
+import { Wallet } from "lucide-react";
 export const Navbar = () => {
   const { role, buyer, vendor, admin, token, logout } = useAuth();
   const { totalCount, setIsCartOpen } = useCart();
@@ -35,13 +35,6 @@ export const Navbar = () => {
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAuthMenuOpen, setIsAuthMenuOpen] = useState(false);
-  const [isWalletOpen, setIsWalletOpen] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(null);
-  const [walletAmount, setWalletAmount] = useState("");
-  const [walletMethod, setWalletMethod] = useState("card");
-  const [walletCrypto, setWalletCrypto] = useState("btc");
-  const [walletMessage, setWalletMessage] = useState("");
-  const [walletLoading, setWalletLoading] = useState(false);
   const categoryRef = useRef(null);
   const profileRef = useRef(null);
   const authMenuRef = useRef(null);
@@ -63,41 +56,6 @@ export const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  const walletBase = role === "buyer" ? "/api/wallet" : role ? `/api/${role}/wallet` : "";
-  const walletPaymentBase = role === "buyer" ? "/api/payments/wallet" : role ? `/api/${role}/payments/wallet` : "";
-  const loadWalletBalance = async () => {
-    if (!token || !walletBase) return;
-    const response = await fetch(walletBase, { headers: { Authorization: `Bearer ${token}` } });
-    if (response.ok) setWalletBalance((await response.json()).wallet?.balance || 0);
-  };
-  useEffect(() => {
-    loadWalletBalance();
-  }, [token, role]);
-  const startWalletDeposit = async () => {
-    if (!token || !walletAmount || !walletPaymentBase) return;
-    setWalletLoading(true);
-    setWalletMessage("");
-    try {
-      const response = await fetch(`${walletPaymentBase}/${walletMethod === "crypto" ? "crypto" : "paystack"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          amount: Number(walletAmount),
-          channel: walletMethod === "bank_transfer" ? "bank_transfer" : "card",
-          pay_currency: walletCrypto
-        })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to initialize wallet deposit.");
-      if (data.paystack?.authorization_url) window.location.href = data.paystack.authorization_url;
-      else if (data.payment?.pay_address) setWalletMessage(`Send ${walletCrypto.toUpperCase()} to ${data.payment.pay_address}.`);
-      setWalletAmount("");
-    } catch (error) {
-      setWalletMessage(error instanceof Error ? error.message : "Wallet deposit failed.");
-    } finally {
-      setWalletLoading(false);
-    }
-  };
   const categories = [
     { name: "Food & Drinks", label: "Restaurants & Eateries", icon: Utensils },
     { name: "Computing", label: "Computing & IT", icon: Monitor },
@@ -208,41 +166,15 @@ export const Navbar = () => {
               </span>}
           </button>
 
-          {role && <div className="relative">
-              <button
-    type="button"
-    onClick={() => {
-      setIsWalletOpen((open) => !open);
-      loadWalletBalance();
-    }}
-    className="flex h-10 items-center gap-2 rounded-xl border border-emerald-800/60 bg-emerald-950/30 px-2 sm:px-3 text-xs text-emerald-200"
-    aria-expanded={isWalletOpen}
-  >
-                <Wallet className="h-4 w-4" />
-                <span>₦{(walletBalance || 0).toLocaleString()}</span>
-              </button>
-              {isWalletOpen && <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-zinc-700 bg-[#18181e] p-4 shadow-2xl">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="font-semibold text-white">Wallet</span>
-                    <button type="button" onClick={loadWalletBalance} className="text-zinc-400 hover:text-white" aria-label="Refresh wallet"><RefreshCw className="h-4 w-4" /></button>
-                  </div>
-                  <div className="mb-3 text-xl font-mono text-emerald-300">₦{(walletBalance || 0).toLocaleString()}</div>
-                  <input type="number" min="1" value={walletAmount} onChange={(event) => setWalletAmount(event.target.value)} placeholder="Amount in NGN" className="mb-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white" />
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <button type="button" onClick={() => setWalletMethod("card")} className={`rounded-lg px-2 py-2 text-[11px] ${walletMethod === "card" ? "bg-purple-600" : "bg-zinc-800"}`}>Card</button>
-                    <button type="button" onClick={() => setWalletMethod("bank_transfer")} className={`rounded-lg px-2 py-2 text-[11px] ${walletMethod === "bank_transfer" ? "bg-indigo-600" : "bg-zinc-800"}`}>Bank</button>
-                    <button type="button" onClick={() => setWalletMethod("crypto")} className={`rounded-lg px-2 py-2 text-[11px] ${walletMethod === "crypto" ? "bg-emerald-700" : "bg-zinc-800"}`}>Crypto</button>
-                  </div>
-                  {walletMethod === "crypto" && <select value={walletCrypto} onChange={(event) => setWalletCrypto(event.target.value)} className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-white">
-                      <option value="btc">Bitcoin (BTC)</option><option value="eth">Ethereum (ETH)</option><option value="usdt">Tether (USDT)</option>
-                    </select>}
-                  <button type="button" disabled={walletLoading || !walletAmount} onClick={startWalletDeposit} className="mt-3 w-full rounded-lg bg-purple-600 py-2.5 text-xs font-semibold disabled:opacity-50">
-                    {walletLoading ? "Opening secure payment..." : "Deposit funds"}
-                  </button>
-                  {walletMessage && <p className="mt-2 break-all text-[11px] text-amber-300">{walletMessage}</p>}
-                  <p className="mt-3 text-[10px] text-zinc-500">Crypto assets depend on the configured payment provider and account support.</p>
-                </div>}
-            </div>}
+          {role === "vendor" && <button
+      type="button"
+      onClick={() => navigate("/vendor/dashboard")}
+      className="flex h-10 items-center gap-2 rounded-lg border border-emerald-800/60 bg-emerald-950/30 px-2.5 text-xs text-emerald-200"
+      aria-label="Open vendor wallet"
+    >
+              <Wallet className="h-4 w-4" />
+              <span>Wallet</span>
+            </button>}
 
           {
     /* Standard Auth Controls: Authenticated User Profile Menu vs. Guest Sign In / Register */

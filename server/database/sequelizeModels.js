@@ -408,6 +408,10 @@ export class Order extends Model {
   vendor_payout_amount;
   currency;
   status;
+  escrow_status;
+  payment_provider;
+  payment_reference;
+  flutterwave_transaction_id;
   shipping_address;
   carrier_name;
   tracking_number;
@@ -467,6 +471,24 @@ Order.init(
       type: DataTypes.ENUM("PENDING_PAYMENT", "HELD_IN_ESCROW", "SHIPPED", "DELIVERED", "delivered_and_completed", "ESCROW_RELEASED", "REFUNDED", "DISPUTED"),
       allowNull: false,
       defaultValue: "PENDING_PAYMENT"
+    },
+    escrow_status: {
+      type: DataTypes.ENUM("pending", "paid_in_escrow", "delivered_confirmed", "released"),
+      allowNull: false,
+      defaultValue: "pending"
+    },
+    payment_provider: {
+      type: DataTypes.STRING(40),
+      allowNull: true
+    },
+    payment_reference: {
+      type: DataTypes.STRING(120),
+      allowNull: true,
+      unique: true
+    },
+    flutterwave_transaction_id: {
+      type: DataTypes.STRING(80),
+      allowNull: true
     },
     shipping_address: {
       type: DataTypes.JSON,

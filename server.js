@@ -11,16 +11,17 @@ import { buyerRegister, buyerLogin, getBuyerProfile, updateBuyerProfile } from "
 import { vendorRegister, vendorLogin, getVendorProfile, updateVendorBranding } from "./server/controllers/vendorAuth.js";
 import { adminLogin, getAdminProfile } from "./server/controllers/adminAuth.js";
 import { getProducts, getProductById, getVendorProducts, createProduct, updateProduct, deleteProduct } from "./server/controllers/productController.js";
-import {
-  initializeCheckout,
-  initializePaystackPayment,
-  verifyPayment,
-  handlePaystackWebhook,
-  vendorShipOrder,
-  buyerConfirmDelivery,
-  adminReleaseEscrow
-} from "./server/controllers/escrowController.js";
-import { paymentEvents } from "./server/controllers/escrowController.js";
+import { adminReleaseEscrow } from "./server/controllers/escrowController.js";
+import initializeFlutterwaveCheckout from "./api/checkout/initialize.js";
+import verifyFlutterwavePayment from "./api/checkout/verify.js";
+import flutterwaveWebhook from "./api/payments/flutterwave/webhook.js";
+import getBuyerOrdersFromMongo from "./api/orders/buyer.js";
+import getVendorOrdersFromMongo from "./api/orders/vendor.js";
+import shipMongoOrder from "./api/orders/[id]/ship.js";
+import confirmMongoDelivery from "./api/orders/[id]/confirm-delivery.js";
+import getVendorWalletFromMongo from "./api/vendor/wallet.js";
+import resolveVendorBank from "./api/vendor/banks/resolve.js";
+import withdrawVendorWallet from "./api/vendor/wallet/withdraw.js";
 import {
   getAdminDashboardStats,
   getAllVendors,
@@ -58,9 +59,6 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 5e3;
   const httpServer = createServer(app);
   const io = new SocketServer(httpServer, { cors: { origin: true, credentials: true } });
-  paymentEvents.on("payment.verified", (payload) => {
-    io.emit("payment.verified", payload);
-  });
   io.on("connection", (socket) => {
     socket.on("join-conversation", (conversationId) => {
       if (typeof conversationId === "string" && conversationId.length < 200) socket.join(conversationId);
@@ -110,21 +108,12 @@ async function startServer() {
   app.post("/api/vendor/products", requireVendorAuth, requireApprovedVendor, createProduct);
   app.put("/api/vendor/products/:id", requireVendorAuth, requireApprovedVendor, updateProduct);
   app.delete("/api/vendor/products/:id", requireVendorAuth, deleteProduct);
-  app.post("/api/checkout/initialize", requireBuyerAuth, initializeCheckout);
-  app.post("/api/checkout/verify", requireBuyerAuth, verifyPayment);
-  app.post("/api/paystack/webhook", handlePaystackWebhook);
-  app.post("/api/payments/verify-paystack", requireBuyerAuth, verifyPayment);
-  app.get("/api/payments/verify-paystack", requireBuyerAuth, verifyPayment);
-  app.post("/api/payments/paystack/initialize", requireBuyerAuth, initializePaystackPayment);
-  app.post("/api/payments/paystack-webhook", handlePaystackWebhook);
-  app.post("/api/payments/wallet/paystack", requireBuyerAuth, initializeWalletPaystack);
-  app.post("/api/payments/wallet/crypto", requireBuyerAuth, initializeWalletCrypto);
-  app.post("/api/payments/deposit/paystack", requireBuyerAuth, initializeWalletPaystack);
-  app.post("/api/payments/deposit/crypto", requireBuyerAuth, initializeWalletCrypto);
-  app.post("/api/payments/nowpayments-webhook", handleNowPaymentsWebhook);
+  app.post("/api/checkout/initialize", requireBuyerAuth, initializeFlutterwaveCheckout);
+  app.get("/api/checkout/verify", requireBuyerAuth, verifyFlutterwavePayment);
+  app.post("/api/payments/flutterwave/webhook", flutterwaveWebhook);
   app.get("/api/wallet", requireBuyerAuth, getWallet);
   app.get("/api/wallet/transactions", requireBuyerAuth, listWalletTransactions);
-  app.get("/api/orders/buyer", requireBuyerAuth, getBuyerOrders);
+  app.get("/api/orders/buyer", requireBuyerAuth, getBuyerOrdersFromMongo);
   app.post("/api/vendor-reviews", requireBuyerAuth, createVendorReview);
   app.get("/api/vendor-reviews/:vendorId", listVendorReviews);
   app.get("/api/vendors/:vendorId/profile", listVendorReviews);
@@ -133,12 +122,12 @@ async function startServer() {
   app.post("/api/feed/:id/like", requireSocialAuth, likeSocialPost);
   app.get("/api/messages", requireSocialAuth, listMessages);
   app.post("/api/messages", requireSocialAuth, createMessage);
-  app.get("/api/orders/vendor", requireVendorAuth, getVendorOrders);
-  app.post("/api/orders/:id/ship", requireVendorAuth, vendorShipOrder);
-  app.post("/api/orders/:id/confirm-delivery", requireBuyerAuth, buyerConfirmDelivery);
-  app.post("/api/vendor/payments/wallet/paystack", requireVendorAuth, initializeWalletPaystack);
-  app.post("/api/vendor/payments/wallet/crypto", requireVendorAuth, initializeWalletCrypto);
-  app.get("/api/vendor/wallet", requireVendorAuth, getWallet);
+  app.get("/api/orders/vendor", requireVendorAuth, getVendorOrdersFromMongo);
+  app.post("/api/orders/:id/ship", requireVendorAuth, shipMongoOrder);
+  app.post("/api/orders/:id/confirm-delivery", requireBuyerAuth, confirmMongoDelivery);
+  app.post("/api/vendor/banks/resolve", requireVendorAuth, resolveVendorBank);
+  app.post("/api/vendor/wallet/withdraw", requireVendorAuth, withdrawVendorWallet);
+  app.get("/api/vendor/wallet", requireVendorAuth, getVendorWalletFromMongo);
   app.get("/api/vendor/wallet/transactions", requireVendorAuth, listWalletTransactions);
   app.get("/api/admin/stats", requireAdminAuth, getAdminDashboardStats);
   app.get("/api/admin/vendors", requireAdminAuth, getAllVendors);

@@ -4,11 +4,10 @@ import { useAuth } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { Navbar } from "./components/Navbar.jsx";
 import { CartDrawer } from "./components/CartDrawer.jsx";
-import { CheckoutModal } from "./components/CheckoutModal.jsx";
 import { MarketplaceHome } from "./pages/MarketplaceHome.jsx";
 import { BuyerLogin } from "./pages/BuyerLogin.jsx";
 import { BuyerOrders } from "./pages/BuyerOrders.jsx";
-import { Checkout } from "./pages/Checkout.jsx";
+import { FlutterwaveCheckout } from "./pages/FlutterwaveCheckout.jsx";
 import { BuyerProtectedRoute } from "./components/BuyerProtectedRoute.jsx";
 import { VendorLogin } from "./pages/VendorLogin.jsx";
 import { VendorRegister } from "./pages/VendorRegister.jsx";
@@ -18,7 +17,7 @@ import { AdminDashboard } from "./pages/AdminDashboard.jsx";
 import { SocialFeed } from "./pages/SocialFeed.jsx";
 import { Messages } from "./pages/Messages.jsx";
 import FoodDelivery from "./pages/FoodDelivery.jsx";
-import { PaymentVerification } from "./pages/PaymentVerification.jsx";
+import { FlutterwaveVerification } from "./pages/FlutterwaveVerification.jsx";
 function RootRedirect() {
   const { token, role, isLoading } = useAuth();
   if (isLoading) {
@@ -42,11 +41,6 @@ export default function App() {
             <CartDrawer />
 
             {
-    /* WebNexa Buyer Protection Checkout Modal */
-  }
-            <CheckoutModal />
-
-            {
     /* Main Application Routes */
   }
             <main className="flex-1">
@@ -65,13 +59,13 @@ export default function App() {
                 <Route
     path="/checkout"
     element={<BuyerProtectedRoute>
-                      <Checkout />
+                      <FlutterwaveCheckout />
                     </BuyerProtectedRoute>}
   />
                 <Route
     path="/checkout/verify"
     element={<BuyerProtectedRoute>
-                      <PaymentVerification />
+                      <FlutterwaveVerification />
                     </BuyerProtectedRoute>}
   />
                 <Route

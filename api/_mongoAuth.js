@@ -35,7 +35,12 @@ export async function getDatabase() {
       db.collection("accounts").createIndex(
         { role: 1, company_registration_no: 1 },
         { unique: true, partialFilterExpression: { role: "vendor", company_registration_no: { $exists: true } } }
-      )
+      ),
+      db.collection("payment_intents").createIndex({ tx_ref: 1 }, { unique: true }),
+      db.collection("orders").createIndex({ payment_reference: 1 }, { unique: true, partialFilterExpression: { payment_reference: { $type: "string" } } }),
+      db.collection("withdrawals").createIndex({ reference: 1 }, { unique: true }),
+      db.collection("wallet_transactions").createIndex({ reference: 1 }, { unique: true }),
+      db.collection("processed_payment_events").createIndex({ event_key: 1 }, { unique: true })
     ]).then(() => void 0).catch((error) => {
       globalMongo.webnexaMongoIndexes = void 0;
       throw error;
@@ -44,7 +49,11 @@ export async function getDatabase() {
   await globalMongo.webnexaMongoIndexes;
   return db;
 }
-export async function getBuyerForRequest(req, db) {
+export async function getMongoClient() {
+  await getDatabase();
+  return await globalMongo.webnexaMongoClient;
+}
+export async function getAccountForRequest(req, db, role) {
   const authorization = req.headers.authorization;
   if (!authorization?.startsWith("Bearer ")) return null;
   let decoded;
@@ -53,8 +62,11 @@ export async function getBuyerForRequest(req, db) {
   } catch {
     return null;
   }
-  if (decoded.role !== "buyer") return null;
-  return db.collection("accounts").findOne({ role: "buyer", $or: [{ _id: decoded.id }, { id: decoded.id }] });
+  if (decoded.role !== role) return null;
+  return db.collection("accounts").findOne({ role, $or: [{ _id: decoded.id }, { id: decoded.id }] });
+}
+export async function getBuyerForRequest(req, db) {
+  return getAccountForRequest(req, db, "buyer");
 }
 function jwtSecret() {
   const secret = process.env.JWT_SECRET;

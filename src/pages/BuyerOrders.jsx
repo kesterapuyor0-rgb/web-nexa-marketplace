@@ -181,7 +181,7 @@ export const BuyerOrders = () => {
                       ₦{order.total_amount.toLocaleString()}
                     </div>
                     <div className="text-[10px] text-zinc-500 font-mono">
-                      Paystack Ref: {order.paystack_reference}
+                      Flutterwave Ref: {order.payment_reference || order.paystack_reference}
                     </div>
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export const BuyerOrders = () => {
                   {order.status === "HELD_IN_ESCROW" && <div className="flex items-center gap-2 text-purple-300">
                       <Lock className="w-4 h-4 shrink-0" />
                       <span>
-                        Payment processed via Paystack.                         Funds are held securely through Platform-Managed Secure Settlement. The vendor is
+                        Payment processed via Flutterwave. Funds are held securely in escrow. The vendor is
                         preparing your package.
                       </span>
                     </div>}
@@ -301,7 +301,7 @@ export const BuyerOrders = () => {
       className="w-full sm:w-auto px-5 py-2.5 rounded-xl cta-gradient text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2 hover:opacity-95 transition-all"
     >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Confirm Delivery Received</span>
+                        <span>Confirm Item Received</span>
                       </button>
                     </>}
 
