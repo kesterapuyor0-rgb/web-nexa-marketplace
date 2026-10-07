@@ -25,6 +25,7 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMarketplace = location.pathname === "/" || location.pathname === "/marketplace";
+  const isVendorPortal = location.pathname.startsWith("/vendor/");
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -97,7 +98,7 @@ export const Navbar = () => {
           {
     /* Categories Dropdown Menu */
   }
-          <div className="relative" ref={categoryRef}>
+          {!isVendorPortal && <div className="relative" ref={categoryRef}>
             <button
     id="categories-dropdown-btn"
     type="button"
@@ -129,7 +130,7 @@ export const Navbar = () => {
   })}
                 </div>
               </div>}
-          </div>
+          </div>}
 
           {
     /* Marketplace Search Bar */
@@ -347,7 +348,7 @@ export const Navbar = () => {
     placeholder="Search verified gear, brands..."
   />
       </div>
-      <nav aria-label="Browse categories" className={`${isMarketplace ? "hidden" : "flex"} mobile-category-nav sm:hidden gap-2 overflow-x-auto px-4 pb-3`}>
+      {!isVendorPortal && <nav aria-label="Browse categories" className={`${isMarketplace ? "hidden" : "flex"} mobile-category-nav sm:hidden gap-2 overflow-x-auto px-4 pb-3`}>
         {categories.map((category) => {
     const Icon = category.icon;
     return <button
@@ -357,9 +358,9 @@ export const Navbar = () => {
       className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 px-3 text-[11px] font-medium text-zinc-300 active:bg-zinc-800"
     >
             <Icon className="h-3.5 w-3.5 text-purple-300" />
-            <span>{category.name}</span>
+            <span>{category.label}</span>
           </button>;
   })}
-      </nav>
+      </nav>}
     </header>;
 };

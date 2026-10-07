@@ -5,7 +5,7 @@ import { Logo } from "../components/Logo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { MARKETPLACE_CATEGORIES } from "../config/categories.js";
 import { CATEGORY_ICONS } from "../config/categoryIcons.js";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search,
   ShieldCheck,
@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 export const MarketplaceHome = () => {
   const { token, role } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSearch = searchParams.get("search") || "";
   const urlCategory = searchParams.get("category") || "All";
@@ -45,6 +46,10 @@ export const MarketplaceHome = () => {
   }, [urlCategory]);
   const [timeLeft, setTimeLeft] = useState({ hours: 5, minutes: 24, seconds: 30 });
   const selectCategory = (category) => {
+    if (category === "Food & Drinks") {
+      navigate("/food-delivery");
+      return;
+    }
     const nextParams = new URLSearchParams(searchParams);
     if (category === "All") {
       nextParams.delete("category");
@@ -59,8 +64,12 @@ export const MarketplaceHome = () => {
   const categories = [
     { name: "All", icon: Layers, count: "All" },
     ...MARKETPLACE_CATEGORIES
-      .filter((name) => name !== "Food & Drinks")
-      .map((name) => ({ name, icon: CATEGORY_ICONS[name], count: "Items" }))
+      .map((name) => ({
+        name,
+        label: name === "Food & Drinks" ? "Restaurants & Eateries" : name,
+        icon: CATEGORY_ICONS[name],
+        count: "Items"
+      }))
       .filter((category) => category.icon)
   ];
   const promoSlides = [
@@ -497,7 +506,7 @@ export const MarketplaceHome = () => {
             <p className="text-xs text-zinc-400">{filteredProducts.length} products</p>
           </div>
           <div role="group" aria-label="Filter products by category" className="flex gap-2 overflow-x-auto pb-1">
-            {categories.map(({ name, icon: Icon }) => <button
+            {categories.map(({ name, label, icon: Icon }) => <button
       key={name}
       type="button"
       onClick={() => selectCategory(name)}
@@ -505,7 +514,7 @@ export const MarketplaceHome = () => {
       className={`flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold transition-colors ${selectedCategory.toLowerCase() === name.toLowerCase() ? "border-purple-400/60 bg-purple-500/15 text-purple-200" : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-600 hover:text-zinc-100"}`}
     >
               <Icon className="h-3.5 w-3.5" />
-              {name}
+              {label || name}
             </button>)}
           </div>
         </div>
