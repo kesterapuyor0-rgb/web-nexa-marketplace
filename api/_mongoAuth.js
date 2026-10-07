@@ -93,6 +93,27 @@ function normalizeEmail(value) {
 function text(value) {
   return typeof value === "string" ? value.trim() : "";
 }
+function requestBody(req) {
+  let body = req.body;
+  if (body == null || body === "") return {};
+  if (Buffer.isBuffer(body)) body = body.toString("utf8");
+  if (typeof body === "string") {
+    if (!body.trim()) return {};
+    try {
+      body = JSON.parse(body);
+    } catch {
+      const error = new Error("Invalid JSON request body");
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    const error = new Error("Request body must be a JSON object");
+    error.statusCode = 400;
+    throw error;
+  }
+  return body;
+}
 function issueToken(account) {
   return jwt.sign(
     { id: account.id, email: account.email, role: account.role },
@@ -273,7 +294,11 @@ async function currentAccount(db, role, req, res) {
 async function handleMongoAuth(req, res, role, operation) {
   try {
     jwtSecret();
-    const body = operation === "me" ? {} : req.body && typeof req.body === "object" ? req.body : {};
+    const body = operation === "me" ? {} : requestBody(req);
+    if (operation === "login" && (!normalizeEmail(body.email) || !text(body.password))) {
+      res.status(400).json({ error: "Email and password are required." });
+      return;
+    }
     const db = await getDatabase();
     if (operation === "me") {
       await currentAccount(db, role, req, res);
