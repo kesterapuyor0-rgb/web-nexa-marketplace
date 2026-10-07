@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Clock, MapPin, Minus, Plus, ShieldCheck, Star, X, ShoppingBag, Flame } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
-import { PhoneInput } from "../components/PhoneInput.jsx";
 const filters = ["All", "Fast Food", "African Cuisine", "Fine Dining", "Drinks & Desserts", "Vegetarian", "Top Rated"];
 const naira = (value) => `\u20A6${value.toLocaleString("en-NG")}`;
 export default function FoodDelivery() {
@@ -13,9 +12,6 @@ export default function FoodDelivery() {
   const [quantities, setQuantities] = useState({});
   const [customization, setCustomization] = useState({ addon: "", spice: "Medium", notes: "" });
   const [trackerStep, setTrackerStep] = useState(0);
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [deliveryPhone, setDeliveryPhone] = useState("");
-  const [contactConfirmed, setContactConfirmed] = useState(false);
   useEffect(() => {
     fetch("/api/food/restaurants").then((response) => response.json()).then((data) => setRestaurants(data.restaurants || [])).catch(() => setRestaurants([]));
   }, []);
@@ -147,17 +143,8 @@ export default function FoodDelivery() {
 
         <section className="mt-10 rounded-3xl border border-purple-500/20 bg-purple-950/20 p-5">
           <div className="flex items-center gap-2"><Flame className="text-orange-400 w-5 h-5" /><h2 className="font-bold">Live preparation tracker</h2></div>
-          <div className="grid grid-cols-4 gap-2 mt-5">{["Order Placed", "Preparing in Kitchen", "Out for Delivery", "Delivered"].map((step, index) => <button key={step} onClick={() => setTrackerStep(index)} className={`text-left ${index <= trackerStep ? "text-purple-200" : "text-zinc-600"}`}><div className={`h-1 rounded ${index <= trackerStep ? "bg-purple-500" : "bg-zinc-800"}`} /><p className="text-xs mt-2">{step}</p></button>)}</div>
-          <p className="text-xs text-zinc-400 mt-4">Payment verification moves your order into the protected preparation queue. Updates remain visible here as the kitchen progresses.</p>
-        </section>
-        <section className="mt-5 rounded-3xl border border-zinc-800 bg-zinc-900/60 p-5">
-          <h2 className="font-bold">Delivery contact confirmation</h2>
-          <p className="mt-1 text-xs text-zinc-400">Confirm where the courier should deliver and the number used for arrival updates.</p>
-          <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
-            <input value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Delivery address" className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-sm text-white outline-none focus:border-purple-500" />
-            <PhoneInput value={deliveryPhone} onChange={setDeliveryPhone} label="Courier contact number" className="min-w-0" />
-          </div>
-          <button type="button" onClick={() => setContactConfirmed(true)} disabled={!deliveryAddress || !deliveryPhone} className="mt-3 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold disabled:opacity-50">{contactConfirmed ? "Delivery details confirmed" : "Confirm delivery details"}</button>
+          <div className="grid grid-cols-4 gap-2 mt-5">{["Order Placed", "Vendor Processing", "Out for Delivery", "Delivered"].map((step, index) => <button key={step} onClick={() => setTrackerStep(index)} className={`text-left ${index <= trackerStep ? "text-purple-200" : "text-zinc-600"}`}><div className={`h-1 rounded ${index <= trackerStep ? "bg-purple-500" : "bg-zinc-800"}`} /><p className="text-xs mt-2">{step}</p></button>)}</div>
+          <p className="text-xs text-zinc-400 mt-4">Payment verification moves your order into the protected processing queue. Updates remain visible here as the vendor processes your order under WebNexa Escrow Protection.</p>
         </section>
       </main>
 

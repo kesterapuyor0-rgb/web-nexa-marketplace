@@ -89,18 +89,23 @@ export const FlutterwaveCheckout = () => {
       {error && <p role="alert" className="mt-5 rounded-lg border border-red-500/30 bg-red-950/30 p-3 text-sm text-red-200">{error}</p>}
 
       <form onSubmit={startCheckout} className="mt-6 space-y-4">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100"><Truck className="h-4 w-4 text-purple-300" /> Delivery details</h2>
-        <label className="block text-xs text-zinc-400">Recipient name
-          <input required value={shipping.recipient_name} onChange={(event) => setField("recipient_name", event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-white" />
-        </label>
-        <PhoneInput label="Delivery phone" value={shipping.phone} onChange={(phone) => setField("phone", phone)} required />
-        <label className="block text-xs text-zinc-400">Street address
-          <span className="relative mt-1.5 block"><MapPin className="absolute left-3 top-3 h-4 w-4 text-zinc-500" /><input required value={shipping.address_line1} onChange={(event) => setField("address_line1", event.target.value)} className="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-9 pr-3 text-sm text-white" /></span>
-        </label>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="block text-xs text-zinc-400">City<input required value={shipping.city} onChange={(event) => setField("city", event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-white" /></label>
-          <label className="block text-xs text-zinc-400">State<input required value={shipping.state} onChange={(event) => setField("state", event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-white" /></label>
-        </div>
+        <section className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 sm:p-5">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100"><Truck className="h-4 w-4 text-purple-300" /> Delivery contact confirmation</h2>
+            <p className="mt-1 text-xs text-zinc-400">Confirm the delivery address and courier contact number for this order.</p>
+          </div>
+          <label className="block text-xs text-zinc-400">Recipient name
+            <input required value={shipping.recipient_name} onChange={(event) => setField("recipient_name", event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-white" />
+          </label>
+          <PhoneInput label="Courier contact number" value={shipping.phone} onChange={(phone) => setField("phone", phone)} required />
+          <label className="block text-xs text-zinc-400">Street address
+            <span className="relative mt-1.5 block"><MapPin className="absolute left-3 top-3 h-4 w-4 text-zinc-500" /><input required value={shipping.address_line1} onChange={(event) => setField("address_line1", event.target.value)} className="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 pl-9 pr-3 text-sm text-white" /></span>
+          </label>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-xs text-zinc-400">City<input required value={shipping.city} onChange={(event) => setField("city", event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-white" /></label>
+            <label className="block text-xs text-zinc-400">State<input required value={shipping.state} onChange={(event) => setField("state", event.target.value)} className="mt-1.5 min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-white" /></label>
+          </div>
+        </section>
         <button disabled={isLoading} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 text-sm font-bold text-white transition-colors hover:bg-purple-500 disabled:cursor-wait disabled:opacity-60">
           <CreditCard className="h-4 w-4" />
           {isLoading ? "Connecting to Flutterwave…" : "Continue to Flutterwave"}

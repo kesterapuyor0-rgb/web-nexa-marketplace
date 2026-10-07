@@ -10,10 +10,6 @@ const COUNTRIES = [
   { code: "GH", name: "Ghana", dialCode: "+233", flag: "\u{1F1EC}\u{1F1ED}", min: 9, max: 9 },
   { code: "AE", name: "United Arab Emirates", dialCode: "+971", flag: "\u{1F1E6}\u{1F1EA}", min: 9, max: 9 }
 ];
-const inferCountry = () => {
-  const locale = typeof navigator !== "undefined" ? navigator.language.toUpperCase() : "";
-  return COUNTRIES.find((country) => locale.includes(`-${country.code}`)) || COUNTRIES[0];
-};
 const digits = (value) => value.replace(/\D/g, "");
 export const PhoneInput = ({
   value,
@@ -25,7 +21,7 @@ export const PhoneInput = ({
 }) => {
   const initialCountry = useMemo(() => {
     const match = COUNTRIES.find((country2) => value.startsWith(country2.dialCode));
-    return match || inferCountry();
+    return match || COUNTRIES[0];
   }, []);
   const [country, setCountry] = useState(initialCountry);
   const [isOpen, setIsOpen] = useState(false);
